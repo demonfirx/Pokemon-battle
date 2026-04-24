@@ -98,7 +98,16 @@ const App = (() => {
    */
   function getAbility(pokemon) {
     const name = pokemon.name?.toLowerCase();
-    if (pokemon.ability) return pokemon.ability;
+    // Backend returns ability as string (e.g., "static"), map to object
+    if (pokemon.ability && typeof pokemon.ability === 'string') {
+      const abilityKey = pokemon.ability.toLowerCase();
+      // Try to find in our local data
+      const localAbility = POKEMON_ABILITIES[name];
+      if (localAbility) return localAbility;
+      // Fallback: capitalize the string
+      return { name: pokemon.ability.charAt(0).toUpperCase() + pokemon.ability.slice(1).replace('-', ' '), description: '' };
+    }
+    if (pokemon.ability && typeof pokemon.ability === 'object') return pokemon.ability;
     return POKEMON_ABILITIES[name] || null;
   }
 
