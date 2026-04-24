@@ -1,6 +1,7 @@
 const pokemon = require('../../backend/data/pokemon.json');
 const moves = require('../../backend/data/moves.json');
 const types = require('../../backend/data/types.json');
+const abilities = require('../../backend/data/abilities.json');
 
 // Battle state store (in-memory, resets on cold start — fine for demo)
 const battles = global._battles || (global._battles = {});
@@ -14,74 +15,315 @@ function createBattlePokemon(poke) {
     ...poke,
     currentHp: poke.hp,
     maxHp: poke.hp,
-    statStages: { attack: 0, defense: 0, speed: 0 },
+    statStages: { attack: 0, defense: 0, spAtk: 0, spDef: 0, speed: 0 },
+    status: null,
+    statusTurns: 0,
+    volatileStatus: {},
     moves: poke.moves.map(moveId => {
       const move = moves[moveId];
-      return move || { id: moveId, name: moveId, type: 'normal', power: 40, accuracy: 100 };
+      return move || { id: moveId, name: moveId, type: 'normal', category: 'physical', power: 40, accuracy: 100, priority: 0, contact: false };
     })
   };
 }
 
 function getStatMultiplier(stages) {
-  return stages >= 0 ? (2 + stages) / 2 : 2 / (2 + Math.abs(stages));
+  if (stages >= 0) return (2 + stages) / 2;
+  return 2 / (2 + Math.abs(stages));
 }
 
-function getEffectiveSpeed(pokemon) {
-  return pokemon.speed * getStatMultiplier(pokemon.statStages.speed);
+function getEffectiveStat(poke, stat) {
+  const base = poke[stat];
+  let multiplier = getStatMultiplier(poke.statStages[stat] || 0);
+  if (stat === 'attack' && poke.status === 'burn') multiplier *= 0.5;
+  if (stat === 'speed' && poke.status === 'paralysis') multiplier *= 0.25;
+  return Math.floor(base * multiplier);
 }
 
 function getStageChangeText(pokemonName, stat, stages) {
-  const statName = stat.charAt(0).toUpperCase() + stat.slice(1);
+  const statNames = {
+    attack: 'Attack', defense: 'Defense', spAtk: 'Sp. Atk',
+    spDef: 'Sp. Def', speed: 'Speed'
+  };
+  const statName = statNames[stat] || stat;
+  if (stages >= 3) return `${pokemonName}'s ${statName} rose drastically!`;
   if (stages >= 2) return `${pokemonName}'s ${statName} sharply rose!`;
   if (stages === 1) return `${pokemonName}'s ${statName} rose!`;
-  if (stages <= -2) return `${pokemonName}'s ${statName} sharply fell!`;
+  if (stages <= -3) return `${pokemonName}'s ${statName} severely fell!`;
+  if (stages <= -2) return `${pokemonName}'s ${statName} harshly fell!`;
   if (stages === -1) return `${pokemonName}'s ${statName} fell!`;
   return '';
 }
 
-function applyStatChange(pokemon, stat, stages) {
-  const oldStage = pokemon.statStages[stat];
-  pokemon.statStages[stat] = Math.max(-6, Math.min(6, oldStage + stages));
-  return pokemon.statStages[stat] - oldStage;
+function applyStatChange(poke, stat, stages) {
+  if (!poke.statStages[stat] && poke.statStages[stat] !== 0) poke.statStages[stat] = 0;
+  const oldStage = poke.statStages[stat];
+  poke.statStages[stat] = Math.max(-6, Math.min(6, oldStage + stages));
+  return poke.statStages[stat] - oldStage;
 }
 
-function getTypeMultiplier(moveType, defenderType) {
+function getTypeMultiplier(moveType, defenderTypes) {
   const attackType = types[moveType];
   if (!attackType) return 1;
-  if (attackType.immune && attackType.immune.includes(defenderType)) return 0;
-  if (attackType.strong && attackType.strong.includes(defenderType)) return 2;
-  if (attackType.weak && attackType.weak.includes(defenderType)) return 0.5;
-  return 1;
+  let multiplier = 1;
+  for (const defType of defenderTypes) {
+    if (attackType.immune && attackType.immune.includes(defType)) return 0;
+    if (attackType.strong && attackType.strong.includes(defType)) multiplier *= 2;
+    else if (attackType.weak && attackType.weak.includes(defType)) multiplier *= 0.5;
+  }
+  return multiplier;
 }
 
-function calculateDamage(attacker, defender, move) {
+function getSTAB(moveType, attackerTypes) {
+  return attackerTypes.includes(moveType) ? 1.5 : 1.0;
+}
+
+function checkCritical(move) {
+  const highCrit = move.highCrit || false;
+  const critRate = highCrit ? (1 / 8) : (1 / 24);
+  return Math.random() < critRate;
+}
+
+function getAbilityBoost(attacker, move) {
+  const ability = abilities[attacker.ability];
+  if (!ability || ability.trigger !== 'onAttack') return 1.0;
+  const eff = ability.effect;
+  if (eff.type === 'powerBoost' && move.type === eff.moveType) {
+    if (eff.condition === 'hpBelow33' && attacker.currentHp <= attacker.maxHp / 3) {
+      return eff.multiplier;
+    }
+  }
+  return 1.0;
+}
+
+function calculateDamage(attacker, defender, move, turnLog) {
   const level = 50;
   const power = move.power;
-  const atk = attacker.attack * getStatMultiplier(attacker.statStages.attack);
-  const def = defender.defense * getStatMultiplier(defender.statStages.defense);
-  const typeMultiplier = getTypeMultiplier(move.type, defender.type);
+  if (!power || power === 0) return { damage: 0, typeMultiplier: 1, effectiveness: 'neutral', critical: false };
+
+  const isPhysical = move.category === 'physical';
+  const isCritical = checkCritical(move);
+
+  let atk, def;
+  if (isPhysical) {
+    const atkStage = isCritical ? Math.max(0, attacker.statStages.attack) : attacker.statStages.attack;
+    const defStage = isCritical ? Math.min(0, defender.statStages.defense) : defender.statStages.defense;
+    atk = Math.floor(attacker.attack * getStatMultiplier(atkStage));
+    def = Math.floor(defender.defense * getStatMultiplier(defStage));
+    if (attacker.status === 'burn' && !isCritical) atk = Math.floor(atk * 0.5);
+  } else {
+    const atkStage = isCritical ? Math.max(0, attacker.statStages.spAtk) : attacker.statStages.spAtk;
+    const defStage = isCritical ? Math.min(0, defender.statStages.spDef) : defender.statStages.spDef;
+    atk = Math.floor(attacker.spAtk * getStatMultiplier(atkStage));
+    def = Math.floor(defender.spDef * getStatMultiplier(defStage));
+  }
+
+  const typeMultiplier = getTypeMultiplier(move.type, defender.types);
+  const stab = getSTAB(move.type, attacker.types);
+  const critMultiplier = isCritical ? 1.5 : 1.0;
   const random = Math.random() * (1.0 - 0.85) + 0.85;
+  const abilityBoost = getAbilityBoost(attacker, move);
+
   const baseDamage = ((2 * level / 5 + 2) * power * atk / def) / 50 + 2;
-  const finalDamage = Math.floor(baseDamage * typeMultiplier * random);
+  const finalDamage = Math.floor(baseDamage * stab * typeMultiplier * critMultiplier * random * abilityBoost);
+
+  const effectiveness = typeMultiplier === 0 ? 'immune' :
+                        typeMultiplier >= 2 ? 'super-effective' :
+                        typeMultiplier > 0 && typeMultiplier < 1 ? 'not-very-effective' : 'neutral';
+
   return {
-    damage: Math.max(1, finalDamage),
+    damage: typeMultiplier === 0 ? 0 : Math.max(1, finalDamage),
     typeMultiplier,
-    effectiveness: typeMultiplier === 0 ? 'immune' :
-                   typeMultiplier >= 2 ? 'super-effective' :
-                   typeMultiplier < 1 ? 'not-very-effective' : 'neutral'
+    effectiveness,
+    critical: isCritical,
+    stab: stab > 1
   };
 }
 
+function isStatusImmune(poke, statusType) {
+  if (poke.ability === 'immunity' && statusType === 'poison') return true;
+  const pokeTypes = poke.types;
+  if (statusType === 'burn' && pokeTypes.includes('fire')) return true;
+  if (statusType === 'paralysis' && pokeTypes.includes('electric')) return true;
+  if (statusType === 'poison' && (pokeTypes.includes('poison') || pokeTypes.includes('steel'))) return true;
+  if (statusType === 'freeze' && pokeTypes.includes('ice')) return true;
+  return false;
+}
+
+function applyStatus(poke, statusType, turnLog) {
+  if (poke.status) return false;
+  if (isStatusImmune(poke, statusType)) return false;
+  poke.status = statusType;
+  if (statusType === 'sleep') poke.statusTurns = Math.floor(Math.random() * 3) + 1;
+  const statusNames = {
+    burn: 'burned', paralysis: 'paralyzed', poison: 'poisoned',
+    freeze: 'frozen solid', sleep: 'fell asleep'
+  };
+  turnLog.push(`${poke.name} was ${statusNames[statusType]}!`);
+  return true;
+}
+
+function applySecondaryEffect(attacker, defender, move, turnLog, defenderMovedFirst) {
+  const effect = move.secondaryEffect;
+  if (!effect) return;
+  const roll = Math.random() * 100;
+  if (roll >= effect.chance) return;
+
+  if (effect.type === 'status') {
+    applyStatus(defender, effect.status, turnLog);
+  } else if (effect.type === 'volatile') {
+    if (effect.status === 'flinch') {
+      if (!defenderMovedFirst) defender.volatileStatus.flinch = true;
+    } else if (effect.status === 'confusion') {
+      if (!defender.volatileStatus.confusion) {
+        defender.volatileStatus.confusion = Math.floor(Math.random() * 4) + 1;
+        turnLog.push(`${defender.name} became confused!`);
+      }
+    }
+  } else if (effect.type === 'statChange') {
+    const target = effect.target === 'defender' ? defender : attacker;
+    const actualChange = applyStatChange(target, effect.stat, effect.stages);
+    if (actualChange !== 0) turnLog.push(getStageChangeText(target.name, effect.stat, effect.stages));
+  }
+}
+
+function applyContactAbility(attacker, defender, move, turnLog) {
+  if (!move.contact) return;
+  const defAbility = abilities[defender.ability];
+  if (defAbility && defAbility.trigger === 'onContactHit') {
+    const eff = defAbility.effect;
+    if (Math.random() * 100 < eff.chance) {
+      if (eff.type === 'status' && eff.status === 'paralysis') {
+        applyStatus(attacker, 'paralysis', turnLog);
+        if (attacker.status === 'paralysis') turnLog.push(`${defender.name}'s Static!`);
+      }
+    }
+  }
+  if (defender.ability === 'cursed-body') {
+    if (Math.random() * 100 < 30) {
+      turnLog.push(`${defender.name}'s Cursed Body disabled ${attacker.name}'s ${move.name}!`);
+    }
+  }
+}
+
+function processPreTurnStatus(poke, turnLog) {
+  if (poke.volatileStatus.flinch) {
+    delete poke.volatileStatus.flinch;
+    turnLog.push(`${poke.name} flinched and couldn't move!`);
+    return false;
+  }
+  if (poke.status === 'freeze') {
+    if (Math.random() < 0.2) {
+      poke.status = null;
+      turnLog.push(`${poke.name} thawed out!`);
+    } else {
+      turnLog.push(`${poke.name} is frozen solid!`);
+      return false;
+    }
+  }
+  if (poke.status === 'sleep') {
+    poke.statusTurns--;
+    if (poke.statusTurns <= 0) {
+      poke.status = null;
+      turnLog.push(`${poke.name} woke up!`);
+    } else {
+      turnLog.push(`${poke.name} is fast asleep.`);
+      return false;
+    }
+  }
+  if (poke.status === 'paralysis') {
+    if (Math.random() < 0.25) {
+      turnLog.push(`${poke.name} is paralyzed! It can't move!`);
+      return false;
+    }
+  }
+  if (poke.volatileStatus.confusion) {
+    poke.volatileStatus.confusion--;
+    if (poke.volatileStatus.confusion <= 0) {
+      delete poke.volatileStatus.confusion;
+      turnLog.push(`${poke.name} snapped out of its confusion!`);
+    } else {
+      turnLog.push(`${poke.name} is confused!`);
+      if (Math.random() < 1 / 3) {
+        const selfDmg = Math.max(1, Math.floor(
+          ((2 * 50 / 5 + 2) * 40 * poke.attack / poke.defense) / 50 + 2
+        ));
+        poke.currentHp = Math.max(0, poke.currentHp - selfDmg);
+        turnLog.push(`It hurt itself in its confusion! ${selfDmg} damage.`);
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function processEndOfTurnStatus(poke, turnLog) {
+  if (poke.currentHp <= 0) return;
+  if (poke.status === 'burn') {
+    const dmg = Math.max(1, Math.floor(poke.maxHp / 16));
+    poke.currentHp = Math.max(0, poke.currentHp - dmg);
+    turnLog.push(`${poke.name} was hurt by its burn! ${dmg} damage.`);
+  }
+  if (poke.status === 'poison') {
+    const dmg = Math.max(1, Math.floor(poke.maxHp / 8));
+    poke.currentHp = Math.max(0, poke.currentHp - dmg);
+    turnLog.push(`${poke.name} was hurt by poison! ${dmg} damage.`);
+  }
+}
+
 function checkAccuracy(move) {
+  if (move.accuracy > 100) return true;
   return Math.random() * 100 < move.accuracy;
 }
 
-function executeAttack(action, turnLog) {
-  const { attacker, defender, move } = action;
+function determineTurnOrder(playerPoke, cpuPoke, playerMove, cpuMove) {
+  const playerPriority = playerMove.priority || 0;
+  const cpuPriority = cpuMove.priority || 0;
+  if (playerPriority !== cpuPriority) return playerPriority > cpuPriority;
+  const playerSpeed = getEffectiveStat(playerPoke, 'speed');
+  const cpuSpeed = getEffectiveStat(cpuPoke, 'speed');
+  if (playerSpeed !== cpuSpeed) return playerSpeed > cpuSpeed;
+  return Math.random() < 0.5;
+}
+
+function cpuPickMove(cpuPokemon, playerPokemon) {
+  const validMoves = cpuPokemon.moves.filter(m => m && m.id);
+  if (validMoves.length === 0) return validMoves[0];
+
+  const scored = validMoves.map(move => {
+    if (move.category === 'status') {
+      if (move.effect && move.effect.target === 'self') {
+        if (cpuPokemon.currentHp > cpuPokemon.maxHp * 0.7) return { move, score: 30 };
+        return { move, score: 5 };
+      }
+      return { move, score: 15 };
+    }
+    const typeEff = getTypeMultiplier(move.type, playerPokemon.types);
+    if (typeEff === 0) return { move, score: 0 };
+    const stab = getSTAB(move.type, cpuPokemon.types);
+    const power = move.power || 0;
+    const accuracy = (move.accuracy > 100 ? 100 : move.accuracy) / 100;
+    const abilityBoost = getAbilityBoost(cpuPokemon, move);
+    const score = power * typeEff * stab * accuracy * abilityBoost;
+    return { move, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  if (scored.length > 1 && Math.random() < 0.2 && scored[1].score > 0) return scored[1].move;
+  return scored[0].move;
+}
+
+function executeAttack(action, turnLog, otherMovedFirst) {
+  const { attacker, defender, move, label } = action;
+  if (!processPreTurnStatus(attacker, turnLog)) return { damage: 0, statusBlocked: true };
+
   turnLog.push(`${attacker.name} used ${move.name}!`);
 
-  // Handle status moves (power === 0 with effect)
-  if (move.power === 0 && move.effect) {
+  if (attacker.status === 'freeze' && move.type === 'fire') {
+    attacker.status = null;
+    turnLog.push(`${attacker.name} thawed out by using ${move.name}!`);
+  }
+
+  if (move.category === 'status' && move.effect) {
     if (!checkAccuracy(move)) {
       turnLog.push(`${attacker.name}'s attack missed!`);
       return { damage: 0, missed: true };
@@ -90,7 +332,11 @@ function executeAttack(action, turnLog) {
     const target = effect.target === 'self' ? attacker : defender;
     const actualChange = applyStatChange(target, effect.stat, effect.stages);
     if (actualChange === 0) {
-      const statName = effect.stat.charAt(0).toUpperCase() + effect.stat.slice(1);
+      const statNames = {
+        attack: 'Attack', defense: 'Defense', spAtk: 'Sp. Atk',
+        spDef: 'Sp. Def', speed: 'Speed'
+      };
+      const statName = statNames[effect.stat] || effect.stat;
       turnLog.push(`${target.name}'s ${statName} won't go any ${effect.stages > 0 ? 'higher' : 'lower'}!`);
     } else {
       turnLog.push(getStageChangeText(target.name, effect.stat, effect.stages));
@@ -102,12 +348,16 @@ function executeAttack(action, turnLog) {
     turnLog.push(`${attacker.name}'s attack missed!`);
     return { damage: 0, missed: true };
   }
-  const result = calculateDamage(attacker, defender, move);
+
+  const result = calculateDamage(attacker, defender, move, turnLog);
   if (result.typeMultiplier === 0) {
     turnLog.push(`It doesn't affect ${defender.name}...`);
     return { damage: 0, immune: true };
   }
+
   defender.currentHp = Math.max(0, defender.currentHp - result.damage);
+  if (result.critical) turnLog.push(`A critical hit!`);
+
   if (result.effectiveness === 'super-effective') {
     turnLog.push(`It's super effective! ${result.damage} damage!`);
   } else if (result.effectiveness === 'not-very-effective') {
@@ -115,6 +365,12 @@ function executeAttack(action, turnLog) {
   } else {
     turnLog.push(`${result.damage} damage.`);
   }
+
+  if (defender.currentHp > 0) {
+    applySecondaryEffect(attacker, defender, move, turnLog, otherMovedFirst);
+    applyContactAbility(attacker, defender, move, turnLog);
+  }
+
   return result;
 }
 
@@ -124,7 +380,6 @@ module.exports = (req, res) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // Route based on URL path
   const url = new URL(req.url, `http://${req.headers.host}`);
   const pathParts = url.pathname.replace('/api/battle/', '').split('/').filter(Boolean);
   const action = pathParts[0] || '';
@@ -166,9 +421,13 @@ module.exports = (req, res) => {
     const playerMove = battle.player.moves.find(m => m.id === moveId);
     if (!playerMove) return res.status(400).json({ error: 'Invalid move' });
 
-    const cpuMove = battle.cpu.moves[Math.floor(Math.random() * battle.cpu.moves.length)];
+    const cpuMove = cpuPickMove(battle.cpu, battle.player);
     const turnLog = [];
-    const playerFirst = getEffectiveSpeed(battle.player) >= getEffectiveSpeed(battle.cpu);
+
+    delete battle.player.volatileStatus.flinch;
+    delete battle.cpu.volatileStatus.flinch;
+
+    const playerFirst = determineTurnOrder(battle.player, battle.cpu, playerMove, cpuMove);
 
     const first = playerFirst
       ? { attacker: battle.player, defender: battle.cpu, move: playerMove, label: 'player' }
@@ -177,7 +436,7 @@ module.exports = (req, res) => {
       ? { attacker: battle.cpu, defender: battle.player, move: cpuMove, label: 'cpu' }
       : { attacker: battle.player, defender: battle.cpu, move: playerMove, label: 'player' };
 
-    executeAttack(first, turnLog);
+    executeAttack(first, turnLog, false);
 
     if (first.defender.currentHp <= 0) {
       first.defender.currentHp = 0;
@@ -186,13 +445,32 @@ module.exports = (req, res) => {
       turnLog.push(`${first.defender.name} fainted!`);
       turnLog.push(`${first.attacker.name} wins!`);
     } else {
-      executeAttack(second, turnLog);
+      executeAttack(second, turnLog, true);
       if (second.defender.currentHp <= 0) {
         second.defender.currentHp = 0;
         battle.status = 'finished';
         battle.winner = second.label;
         turnLog.push(`${second.defender.name} fainted!`);
         turnLog.push(`${second.attacker.name} wins!`);
+      }
+    }
+
+    if (battle.status === 'active') {
+      const speedOrder = playerFirst
+        ? [battle.player, battle.cpu]
+        : [battle.cpu, battle.player];
+      for (const poke of speedOrder) {
+        processEndOfTurnStatus(poke, turnLog);
+        if (poke.currentHp <= 0) {
+          poke.currentHp = 0;
+          battle.status = 'finished';
+          const isPlayer = poke === battle.player;
+          battle.winner = isPlayer ? 'cpu' : 'player';
+          turnLog.push(`${poke.name} fainted!`);
+          const winnerPoke = isPlayer ? battle.cpu : battle.player;
+          turnLog.push(`${winnerPoke.name} wins!`);
+          break;
+        }
       }
     }
 
