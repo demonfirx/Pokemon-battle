@@ -1638,6 +1638,734 @@ body {
 }
 
 /* ============================================
+   ATTACK VFX — Effects Layer & Particles
+   ============================================ */
+
+/* --- Effects Layer --- */
+.effects-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 8; /* above sprites (z:2), below UI overlays */
+}
+
+/* --- Base Particle --- */
+.vfx-particle {
+  position: absolute;
+  pointer-events: none;
+  will-change: transform, opacity;
+  transform: translate(-50%, -50%);
+}
+
+/* --- Screen Tint Overlay --- */
+.vfx-screen-tint {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: none;
+  transition: opacity 0.15s ease;
+  z-index: 1;
+}
+
+/* --- Strobe Flash --- */
+.vfx-strobe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: none;
+  background: rgba(255, 255, 200, 0.7);
+  animation: vfx-strobe-flash 0.07s ease-out forwards;
+}
+
+@keyframes vfx-strobe-flash {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* --- Screen Shake --- */
+.vfx-shake-medium {
+  animation: vfx-shake-med 0.4s ease;
+}
+
+.vfx-shake-hard {
+  animation: vfx-shake-hard 0.5s ease;
+}
+
+.vfx-shake-heavy {
+  animation: vfx-shake-heavy 0.7s ease;
+}
+
+@keyframes vfx-shake-med {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-4px, -2px); }
+  20% { transform: translate(4px, 2px); }
+  30% { transform: translate(-4px, 1px); }
+  40% { transform: translate(3px, -1px); }
+  50% { transform: translate(-2px, 2px); }
+  60% { transform: translate(2px, -1px); }
+  70% { transform: translate(-1px, 1px); }
+}
+
+@keyframes vfx-shake-hard {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-8px, -4px); }
+  20% { transform: translate(8px, 3px); }
+  30% { transform: translate(-7px, 4px); }
+  40% { transform: translate(6px, -3px); }
+  50% { transform: translate(-5px, 2px); }
+  60% { transform: translate(4px, -2px); }
+  70% { transform: translate(-3px, 1px); }
+  80% { transform: translate(2px, -1px); }
+}
+
+@keyframes vfx-shake-heavy {
+  0%, 100% { transform: translate(0, 0); }
+  5% { transform: translate(-10px, -5px); }
+  10% { transform: translate(10px, 4px); }
+  15% { transform: translate(-9px, 5px); }
+  20% { transform: translate(9px, -4px); }
+  25% { transform: translate(-8px, 3px); }
+  30% { transform: translate(7px, -3px); }
+  40% { transform: translate(-6px, 2px); }
+  50% { transform: translate(5px, -2px); }
+  60% { transform: translate(-4px, 1px); }
+  70% { transform: translate(3px, -1px); }
+  80% { transform: translate(-2px, 1px); }
+  90% { transform: translate(1px, 0); }
+}
+
+/* --- Frost Tint on Sprite --- */
+.vfx-frost-tint {
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)) brightness(1.3) saturate(0.5) hue-rotate(180deg) !important;
+  transition: filter 0.15s ease;
+}
+
+/* ========== FIRE PARTICLES ========== */
+.vfx-flame {
+  border-radius: 50% 50% 50% 0;
+  background: radial-gradient(circle at 30% 30%, #ffeb3b, #ff9800, #f44336);
+  opacity: 0;
+  animation: vfx-flame-fly 0.45s ease-out forwards;
+  box-shadow: 0 0 8px rgba(255, 152, 0, 0.6);
+}
+
+@keyframes vfx-flame-fly {
+  0% { opacity: 0.8; transform: translate(-50%, -50%) scale(0.4) rotate(0deg); }
+  50% { opacity: 1; transform: translate(calc(-50% + var(--dx) * 0.5), calc(-50% + var(--dy) * 0.5)) scale(1.2) rotate(45deg); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.6) rotate(90deg); }
+}
+
+.vfx-ember {
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffeb3b, #ff5722);
+  opacity: 0;
+  animation: vfx-ember-scatter 0.5s ease-out forwards;
+  box-shadow: 0 0 4px rgba(255, 87, 34, 0.5);
+}
+
+@keyframes vfx-ember-scatter {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.2); }
+}
+
+/* ========== WATER PARTICLES ========== */
+.vfx-water-drop {
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #bbdefb, #42a5f5, #1565c0);
+  opacity: 0;
+  animation: vfx-water-fly 0.4s ease-out forwards;
+  box-shadow: 0 0 6px rgba(66, 165, 245, 0.5);
+}
+
+@keyframes vfx-water-fly {
+  0% { opacity: 0.9; transform: translate(-50%, -50%) scale(0.5); }
+  60% { opacity: 1; transform: translate(calc(-50% + var(--dx) * 0.7), calc(-50% + var(--dy) * 0.7)) scale(1); }
+  100% { opacity: 0.3; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.7); }
+}
+
+.vfx-splash {
+  border-radius: 50%;
+  background: radial-gradient(circle, #90caf9, #1e88e5);
+  opacity: 0;
+  animation: vfx-splash-up 0.5s ease-out forwards;
+}
+
+@keyframes vfx-splash-up {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.8; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.8); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) + 40px)) scale(0.3); }
+}
+
+.vfx-ripple {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid rgba(66, 165, 245, 0.7);
+  background: transparent;
+  opacity: 0;
+  animation: vfx-ripple-expand 0.6s ease-out forwards;
+}
+
+@keyframes vfx-ripple-expand {
+  0% { opacity: 0.8; transform: translate(-50%, -50%) scale(0.5); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(5); }
+}
+
+/* ========== ELECTRIC PARTICLES ========== */
+.vfx-lightning-svg {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  animation: vfx-lightning-flash 0.2s ease-out forwards;
+  overflow: visible;
+}
+
+.vfx-lightning-path {
+  fill: none;
+  stroke: #fff176;
+  stroke-width: 3;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px rgba(255, 241, 118, 0.8));
+}
+
+.vfx-lightning-glow {
+  fill: none;
+  stroke: rgba(255, 241, 118, 0.4);
+  stroke-width: 8;
+  stroke-linecap: round;
+}
+
+@keyframes vfx-lightning-flash {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  60% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.vfx-spark {
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff, #ffeb3b);
+  opacity: 0;
+  animation: vfx-spark-scatter 0.4s ease-out forwards;
+  box-shadow: 0 0 6px rgba(255, 235, 59, 0.8);
+}
+
+@keyframes vfx-spark-scatter {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.1); }
+}
+
+/* ========== GRASS PARTICLES ========== */
+.vfx-grass-beam {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #c8e6c9, #4caf50);
+  box-shadow: 0 0 12px rgba(76, 175, 80, 0.6), 0 0 24px rgba(76, 175, 80, 0.3);
+  opacity: 0;
+  animation: vfx-beam-travel 0.45s ease-out forwards;
+  transform-origin: center;
+}
+
+@keyframes vfx-beam-travel {
+  0% { opacity: 0.9; transform: translate(-50%, -50%) scale(1); width: 8px; height: 8px; }
+  30% { opacity: 1; transform: translate(calc(-50% + var(--dx) * 0.3), calc(-50% + var(--dy) * 0.3)) scale(2); }
+  70% { opacity: 0.8; transform: translate(calc(-50% + var(--dx) * 0.7), calc(-50% + var(--dy) * 0.7)) scale(1.5); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.5); }
+}
+
+.vfx-leaf {
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(135deg, #66bb6a, #2e7d32);
+  border-radius: 0 50% 50% 50%;
+  opacity: 0;
+  animation: vfx-leaf-fly 0.5s ease-out forwards;
+}
+
+@keyframes vfx-leaf-fly {
+  0% { opacity: 0.9; transform: translate(-50%, -50%) scale(0.5) rotate(0deg); }
+  50% { opacity: 1; transform: translate(calc(-50% + var(--dx) * 0.5), calc(-50% + var(--dy) * 0.5)) scale(1) rotate(180deg); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.6) rotate(360deg); }
+}
+
+.vfx-leaf-scatter {
+  background: linear-gradient(135deg, #81c784, #388e3c);
+  border-radius: 0 50% 50% 50%;
+  opacity: 0;
+  animation: vfx-ember-scatter 0.5s ease-out forwards;
+}
+
+/* ========== GHOST PARTICLES ========== */
+.vfx-shadow-ball {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #9c27b0, #4a148c, #1a0033);
+  box-shadow: 0 0 15px rgba(156, 39, 176, 0.6), 0 0 30px rgba(74, 20, 140, 0.4);
+  opacity: 0;
+  animation: vfx-shadow-ball-fly 0.5s ease-in-out forwards;
+}
+
+@keyframes vfx-shadow-ball-fly {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+  80% { opacity: 1; transform: translate(calc(-50% + var(--dx) * 0.8), calc(-50% + var(--dy) * 0.8)) scale(1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.5); }
+}
+
+.vfx-wisp {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(156, 39, 176, 0.6), transparent);
+  opacity: 0;
+  animation: vfx-wisp-trail 0.5s ease-out forwards;
+}
+
+@keyframes vfx-wisp-trail {
+  0% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.3); }
+}
+
+.vfx-dark-burst {
+  border-radius: 50%;
+  background: radial-gradient(circle, #7b1fa2, #311b92);
+  opacity: 0;
+  animation: vfx-ember-scatter 0.5s ease-out forwards;
+  box-shadow: 0 0 6px rgba(123, 31, 162, 0.5);
+}
+
+/* ========== NORMAL PARTICLES ========== */
+.vfx-shockwave {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.7);
+  background: transparent;
+  opacity: 0;
+  animation: vfx-shockwave-expand 0.5s ease-out forwards;
+}
+
+@keyframes vfx-shockwave-expand {
+  0% { opacity: 0.9; transform: translate(-50%, -50%) scale(0.3); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(4); }
+}
+
+.vfx-star-spark {
+  background: #fff;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  opacity: 0;
+  animation: vfx-star-scatter 0.5s ease-out forwards;
+}
+
+@keyframes vfx-star-scatter {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.2) rotate(180deg); }
+}
+
+/* ========== ICE PARTICLES ========== */
+.vfx-ice-beam {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #e3f2fd, #64b5f6, #1565c0);
+  box-shadow: 0 0 10px rgba(100, 181, 246, 0.6), 0 0 20px rgba(21, 101, 192, 0.3);
+  opacity: 0;
+  animation: vfx-beam-travel 0.45s ease-out forwards;
+}
+
+.vfx-ice-crystal {
+  background: linear-gradient(135deg, rgba(227, 242, 253, 0.9), rgba(100, 181, 246, 0.7));
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  opacity: 0;
+  animation: vfx-crystal-sparkle 0.5s ease-out forwards;
+  box-shadow: 0 0 4px rgba(100, 181, 246, 0.5);
+}
+
+@keyframes vfx-crystal-sparkle {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0) rotate(0deg); }
+  40% { opacity: 1; transform: translate(-50%, -50%) scale(1.2) rotate(45deg); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.5) rotate(90deg); }
+}
+
+.vfx-snowflake {
+  background: radial-gradient(circle, #fff, #bbdefb);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  opacity: 0;
+  animation: vfx-snowflake-drift 0.6s ease-out forwards;
+}
+
+@keyframes vfx-snowflake-drift {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.3) rotate(180deg); }
+}
+
+/* ========== DRAGON PARTICLES ========== */
+.vfx-dragon-aura {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(112, 56, 248, 0.4), rgba(49, 27, 146, 0.2), transparent);
+  box-shadow: 0 0 20px rgba(112, 56, 248, 0.4);
+  opacity: 0;
+  animation: vfx-aura-pulse 0.4s ease-out forwards;
+}
+
+@keyframes vfx-aura-pulse {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
+.vfx-claw-slash {
+  width: 8px;
+  height: 70px;
+  background: linear-gradient(180deg, transparent, #b388ff, #7c4dff, #b388ff, transparent);
+  border-radius: 4px;
+  opacity: 0;
+  animation: vfx-claw-swipe 0.35s ease-out forwards;
+  box-shadow: 0 0 8px rgba(124, 77, 255, 0.6);
+  transform-origin: center;
+}
+
+@keyframes vfx-claw-swipe {
+  0% { opacity: 0; transform: translate(-50%, 0%) scaleY(0) rotate(-15deg); }
+  40% { opacity: 1; transform: translate(-50%, 0%) scaleY(1) rotate(-15deg); }
+  100% { opacity: 0; transform: translate(-50%, 0%) scaleY(1) rotate(-15deg); }
+}
+
+.vfx-dragon-burst {
+  border-radius: 50%;
+  background: radial-gradient(circle, #b388ff, #4a148c);
+  opacity: 0;
+  animation: vfx-ember-scatter 0.5s ease-out forwards;
+  box-shadow: 0 0 5px rgba(179, 136, 255, 0.5);
+}
+
+/* ========== POISON PARTICLES ========== */
+.vfx-toxic-blob {
+  border-radius: 50% 40% 50% 40%;
+  background: radial-gradient(circle at 35% 35%, #ce93d8, #8e24aa, #4a148c);
+  opacity: 0;
+  animation: vfx-toxic-arc 0.5s ease-in-out forwards;
+  box-shadow: 0 0 6px rgba(142, 36, 170, 0.5);
+}
+
+@keyframes vfx-toxic-arc {
+  0% { opacity: 0.9; transform: translate(-50%, -50%) scale(0.5); }
+  40% { opacity: 1; transform: translate(calc(-50% + var(--dx) * 0.4), calc(-50% + var(--dy) * 0.4 + var(--arc))) scale(1.1); }
+  100% { opacity: 0.3; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.8); }
+}
+
+.vfx-toxic-splat {
+  border-radius: 50%;
+  background: radial-gradient(circle, #ab47bc, #6a1b9a);
+  opacity: 0;
+  animation: vfx-ember-scatter 0.45s ease-out forwards;
+}
+
+.vfx-toxic-bubble {
+  border-radius: 50%;
+  border: 2px solid rgba(171, 71, 188, 0.6);
+  background: rgba(171, 71, 188, 0.15);
+  opacity: 0;
+  animation: vfx-bubble-rise 0.7s ease-out forwards;
+}
+
+@keyframes vfx-bubble-rise {
+  0% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 0.5; transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% - 50px)) scale(1.2); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% - 60px)) scale(0.5); }
+}
+
+/* ========== DARK PARTICLES ========== */
+.vfx-dark-ring {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 3px solid rgba(112, 88, 72, 0.7);
+  background: transparent;
+  opacity: 0;
+  animation: vfx-dark-ring-travel 0.5s ease-out forwards;
+}
+
+@keyframes vfx-dark-ring-travel {
+  0% { opacity: 0.8; transform: translate(-50%, -50%) scale(0.5); }
+  50% { opacity: 0.6; transform: translate(calc(-50% + var(--dx) * 0.5), calc(-50% + var(--dy) * 0.5)) scale(1.5); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(2.5); }
+}
+
+.vfx-dark-shadow {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.6), rgba(50, 40, 30, 0.3), transparent);
+  opacity: 0;
+  animation: vfx-dark-shadow-pulse 0.6s ease-out forwards;
+}
+
+@keyframes vfx-dark-shadow-pulse {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  30% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.2); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+
+/* ========== STEEL PARTICLES ========== */
+.vfx-metal-flash {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(184, 184, 208, 0.5), transparent);
+  opacity: 0;
+  animation: vfx-metal-flash-anim 0.3s ease-out forwards;
+}
+
+@keyframes vfx-metal-flash-anim {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  30% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
+}
+
+.vfx-metal-spark {
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff, #e0e0e0, #9e9e9e);
+  opacity: 0;
+  animation: vfx-star-scatter 0.4s ease-out forwards;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
+}
+
+.vfx-metal-wave {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(184, 184, 208, 0.8);
+  background: transparent;
+  opacity: 0;
+  animation: vfx-shockwave-expand 0.5s ease-out forwards;
+}
+
+/* ========== FLYING PARTICLES ========== */
+.vfx-wind-slash {
+  width: 50px;
+  height: 6px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+  border-radius: 50%;
+  opacity: 0;
+  animation: vfx-wind-slash-anim 0.4s ease-out forwards;
+  transform-origin: center;
+}
+
+@keyframes vfx-wind-slash-anim {
+  0% { opacity: 0; transform: translate(-50%, -50%) scaleX(0) rotate(-20deg); }
+  30% { opacity: 1; transform: translate(-50%, -50%) scaleX(1.2) rotate(-20deg); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scaleX(1.5) rotate(-20deg); }
+}
+
+.vfx-air-wave {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(168, 144, 240, 0.6);
+  background: transparent;
+  opacity: 0;
+  animation: vfx-shockwave-expand 0.45s ease-out forwards;
+}
+
+.vfx-feather {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(168, 144, 240, 0.5));
+  border-radius: 50% 0 50% 0;
+  opacity: 0;
+  animation: vfx-feather-float 0.7s ease-out forwards;
+}
+
+@keyframes vfx-feather-float {
+  0% { opacity: 0.9; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  50% { opacity: 0.7; transform: translate(calc(-50% + var(--dx) * 0.5), calc(-50% + var(--dy) * 0.5)) scale(0.8) rotate(90deg); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) + 30px)) scale(0.4) rotate(180deg); }
+}
+
+/* ========== GROUND PARTICLES ========== */
+.vfx-ground-crack {
+  width: 40px;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, #8d6e63, #5d4037, #8d6e63, transparent);
+  opacity: 0;
+  animation: vfx-crack-appear 0.5s ease-out forwards;
+  transform-origin: center;
+}
+
+@keyframes vfx-crack-appear {
+  0% { opacity: 0; transform: translate(-50%, -50%) scaleX(0); }
+  30% { opacity: 1; transform: translate(-50%, -50%) scaleX(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scaleX(1.2); }
+}
+
+.vfx-dust {
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(161, 136, 107, 0.7), rgba(121, 85, 72, 0.4));
+  opacity: 0;
+  animation: vfx-dust-rise 0.7s ease-out forwards;
+}
+
+@keyframes vfx-dust-rise {
+  0% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.3); }
+}
+
+.vfx-ground-impact {
+  width: 50px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(141, 110, 99, 0.6), transparent);
+  opacity: 0;
+  animation: vfx-ground-impact-anim 0.5s ease-out forwards;
+}
+
+@keyframes vfx-ground-impact-anim {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  30% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.5); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
+}
+
+/* ========== FIGHTING PARTICLES ========== */
+.vfx-fighting-burst {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(244, 67, 54, 0.6), rgba(183, 28, 28, 0.3), transparent);
+  opacity: 0;
+  animation: vfx-fighting-burst-anim 0.4s ease-out forwards;
+}
+
+@keyframes vfx-fighting-burst-anim {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  30% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
+}
+
+.vfx-speed-line {
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  opacity: 0;
+  animation: vfx-speed-line-anim 0.3s ease-out forwards;
+}
+
+@keyframes vfx-speed-line-anim {
+  0% { opacity: 0; transform: translate(-50%, -50%) scaleX(0.3); }
+  30% { opacity: 1; transform: translate(calc(-50% + var(--dx) * 0.3), calc(-50% + var(--dy) * 0.3)) scaleX(1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scaleX(0.5); }
+}
+
+.vfx-fighting-spark {
+  background: #ffcdd2 !important;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+/* ========== PSYCHIC PARTICLES ========== */
+.vfx-psychic-wave {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(248, 88, 136, 0.6);
+  background: rgba(248, 88, 136, 0.1);
+  opacity: 0;
+  animation: vfx-dark-ring-travel 0.5s ease-out forwards;
+}
+
+.vfx-psychic-burst {
+  border-radius: 50%;
+  background: radial-gradient(circle, #f48fb1, #c2185b);
+  opacity: 0;
+  animation: vfx-ember-scatter 0.5s ease-out forwards;
+  box-shadow: 0 0 5px rgba(244, 143, 177, 0.5);
+}
+
+/* ========== BUG PARTICLES ========== */
+.vfx-bug-particle {
+  border-radius: 50%;
+  background: radial-gradient(circle, #c0ca33, #827717);
+  opacity: 0;
+  animation: vfx-leaf-fly 0.5s ease-out forwards;
+  box-shadow: 0 0 3px rgba(192, 202, 51, 0.4);
+}
+
+/* ========== ROCK PARTICLES ========== */
+.vfx-rock-chunk {
+  background: linear-gradient(135deg, #a1887f, #795548, #5d4037);
+  clip-path: polygon(20% 0%, 80% 0%, 100% 40%, 90% 100%, 10% 100%, 0% 60%);
+  opacity: 0;
+  animation: vfx-rock-fly 0.5s ease-out forwards;
+}
+
+@keyframes vfx-rock-fly {
+  0% { opacity: 0.9; transform: translate(-50%, -50%) scale(0.5) rotate(0deg); }
+  50% { opacity: 1; transform: translate(calc(-50% + var(--dx) * 0.5), calc(-50% + var(--dy) * 0.5)) scale(1) rotate(90deg); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.7) rotate(180deg); }
+}
+
+.vfx-rock-debris {
+  background: linear-gradient(135deg, #8d6e63, #4e342e);
+  clip-path: polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%);
+  opacity: 0;
+  animation: vfx-ember-scatter 0.45s ease-out forwards;
+}
+
+/* ========== FAIRY PARTICLES ========== */
+.vfx-fairy-sparkle {
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff, #f8bbd0, #f48fb1);
+  opacity: 0;
+  animation: vfx-fairy-sparkle-anim 0.5s ease-out forwards;
+  box-shadow: 0 0 6px rgba(244, 143, 177, 0.6);
+}
+
+@keyframes vfx-fairy-sparkle-anim {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+  40% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+  70% { opacity: 0.8; transform: translate(-50%, -50%) scale(0.8); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+}
+
+.vfx-fairy-star {
+  background: #f48fb1;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  opacity: 0;
+  animation: vfx-star-scatter 0.5s ease-out forwards;
+  box-shadow: 0 0 4px rgba(244, 143, 177, 0.5);
+}
+
+/* ========== GENERIC FALLBACK ========== */
+.vfx-generic-burst {
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.8), rgba(200, 200, 200, 0.4));
+  opacity: 0;
+  animation: vfx-ember-scatter 0.5s ease-out forwards;
+}
+
+/* ========== MOBILE VFX OPTIMIZATIONS ========== */
+@media (max-width: 480px) {
+  .vfx-particle {
+    /* Reduce box-shadow complexity on mobile */
+    box-shadow: none !important;
+  }
+
+  .vfx-lightning-glow {
+    display: none; /* skip glow layer on mobile */
+  }
+
+  .vfx-dragon-aura {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+/* ============================================
    RESPONSIVE — MOBILE-FIRST ENHANCEMENTS
    ============================================ */
 

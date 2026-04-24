@@ -52,8 +52,8 @@ const App = (() => {
     snorlax: { hp: 160, attack: 110, defense: 65, spAtk: 65, spDef: 110, speed: 30 },
   };
 
-  // Max base stat for bar scaling (Snorlax HP = 160)
-  const MAX_BASE_STAT = 160;
+  // Max calculated stat for bar scaling (Snorlax HP at Lv50 = 267)
+  const MAX_STAT = 267;
 
   // State
   let allPokemon = [];
@@ -164,26 +164,35 @@ const App = (() => {
 
       const types = getTypes(pokemon);
       const ability = getAbility(pokemon);
-      const stats = getBaseStats(pokemon);
       const spriteUrl = getStaticSpriteUrl(pokemon);
+
+      // Use calculated stats (what's actually used in battle) instead of base stats
+      const calcStats = {
+        hp: pokemon.hp || 100,
+        attack: pokemon.attack || 100,
+        defense: pokemon.defense || 100,
+        spAtk: pokemon.spAtk || 100,
+        spDef: pokemon.spDef || 100,
+        speed: pokemon.speed || 100,
+      };
 
       // Build type badges HTML
       const typeBadgesHtml = types.map(t =>
         `<span class="card-type type-${t.toLowerCase()}">${t.toLowerCase()}</span>`
       ).join('');
 
-      // Build stat bars HTML
+      // Build stat bars HTML using calculated stats
       const statEntries = [
-        { label: 'HP', value: stats.hp },
-        { label: 'ATK', value: stats.attack },
-        { label: 'DEF', value: stats.defense },
-        { label: 'SPA', value: stats.spAtk },
-        { label: 'SPD', value: stats.spDef },
-        { label: 'SPE', value: stats.speed },
+        { label: 'HP', value: calcStats.hp },
+        { label: 'ATK', value: calcStats.attack },
+        { label: 'DEF', value: calcStats.defense },
+        { label: 'SPA', value: calcStats.spAtk },
+        { label: 'SPD', value: calcStats.spDef },
+        { label: 'SPE', value: calcStats.speed },
       ];
 
       const statBarsHtml = statEntries.map(s => {
-        const pct = Math.min(100, (s.value / MAX_BASE_STAT) * 100);
+        const pct = Math.min(100, (s.value / MAX_STAT) * 100);
         const color = getStatColor(s.value);
         return `
           <div class="card-stat-row">

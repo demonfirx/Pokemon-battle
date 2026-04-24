@@ -1021,6 +1021,7 @@ const Battle = (() => {
 
   /**
    * Animate an attack with critical/STAB/effectiveness support
+   * Now uses AttackEffects VFX engine for per-type visual effects
    */
   async function animateAttack(attacker, result, move) {
     const isPlayer = attacker === 'player';
@@ -1038,46 +1039,85 @@ const Battle = (() => {
     const attackClass = isPlayer ? 'sprite-attack-right' : 'sprite-attack-left';
     attackerSprite.classList.add(attackClass);
 
-    await delay(300);
+    await delay(250);
 
-    // 2. Screen flash
-    showFlash(moveType);
+    // 2. Play per-type VFX (replaces simple flash)
+    if (typeof AttackEffects !== 'undefined') {
+      const attackerSide = isPlayer ? 'player' : 'opponent';
+      const defenderSide = isPlayer ? 'opponent' : 'player';
+      // Fire VFX in parallel with hit animation
+      const vfxPromise = AttackEffects.play(moveType, attackerSide, defenderSide);
 
-    await delay(200);
+      // 3. Target gets hit — use critical hit animation if applicable
+      await delay(150);
+      if (isCritical) {
+        targetSprite.classList.add('sprite-hit-critical');
+      } else {
+        targetSprite.classList.add('sprite-hit');
+      }
 
-    // 3. Target gets hit — use critical hit animation if applicable
-    if (isCritical) {
-      targetSprite.classList.add('sprite-hit-critical');
+      // 4. Play appropriate sound
+      if (result?.missed) {
+        AudioManager.miss();
+      } else if (effectiveness === 0) {
+        AudioManager.immune();
+      } else if (isCritical) {
+        AudioManager.critical();
+      } else if (effectiveness >= 2) {
+        AudioManager.superEffective();
+      } else if (effectiveness < 1 && effectiveness > 0) {
+        AudioManager.notVeryEffective();
+      } else if (damage > 0) {
+        AudioManager.hit();
+      }
+
+      // 5. Show damage number with critical/STAB styling
+      showDamageNumber(targetDmgEl, damage, result?.missed, isCritical, isStab);
+
+      // 6. Show effectiveness text in arena
+      if (effectiveness > 1) {
+        showEffectivenessText("It's super effective!", true);
+      } else if (effectiveness < 1 && effectiveness > 0) {
+        showEffectivenessText("It's not very effective...", false);
+      }
+
+      // Wait for VFX to complete
+      await vfxPromise;
     } else {
-      targetSprite.classList.add('sprite-hit');
+      // Fallback: original simple flash
+      showFlash(moveType);
+      await delay(200);
+
+      if (isCritical) {
+        targetSprite.classList.add('sprite-hit-critical');
+      } else {
+        targetSprite.classList.add('sprite-hit');
+      }
+
+      if (result?.missed) {
+        AudioManager.miss();
+      } else if (effectiveness === 0) {
+        AudioManager.immune();
+      } else if (isCritical) {
+        AudioManager.critical();
+      } else if (effectiveness >= 2) {
+        AudioManager.superEffective();
+      } else if (effectiveness < 1 && effectiveness > 0) {
+        AudioManager.notVeryEffective();
+      } else if (damage > 0) {
+        AudioManager.hit();
+      }
+
+      showDamageNumber(targetDmgEl, damage, result?.missed, isCritical, isStab);
+
+      if (effectiveness > 1) {
+        showEffectivenessText("It's super effective!", true);
+      } else if (effectiveness < 1 && effectiveness > 0) {
+        showEffectivenessText("It's not very effective...", false);
+      }
+
+      await delay(600);
     }
-
-    // 4. Play appropriate sound
-    if (result?.missed) {
-      AudioManager.miss();
-    } else if (effectiveness === 0) {
-      AudioManager.immune();
-    } else if (isCritical) {
-      AudioManager.critical();
-    } else if (effectiveness >= 2) {
-      AudioManager.superEffective();
-    } else if (effectiveness < 1 && effectiveness > 0) {
-      AudioManager.notVeryEffective();
-    } else if (damage > 0) {
-      AudioManager.hit();
-    }
-
-    // 5. Show damage number with critical/STAB styling
-    showDamageNumber(targetDmgEl, damage, result?.missed, isCritical, isStab);
-
-    // 6. Show effectiveness text in arena
-    if (effectiveness > 1) {
-      showEffectivenessText("It's super effective!", true);
-    } else if (effectiveness < 1 && effectiveness > 0) {
-      showEffectivenessText("It's not very effective...", false);
-    }
-
-    await delay(600);
 
     // Cleanup
     attackerSprite.classList.remove(attackClass);
