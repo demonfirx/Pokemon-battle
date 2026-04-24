@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/api/pokemon", "destination": "/api/pokemon" },
+    { "source": "/api/battle/(.*)", "destination": "/api/battle/[...path]" },
+    { "source": "/((?!api/).*)", "destination": "/frontend/$1" }
+  ]
+}

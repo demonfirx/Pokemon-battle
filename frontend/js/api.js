@@ -4,7 +4,10 @@
  */
 
 const API = (() => {
-  const BASE_URL = 'http://localhost:3001/api';
+  // Auto-detect: use relative URL on Vercel, localhost for dev
+  const BASE_URL = window.location.hostname === 'localhost' && window.location.port !== '3000'
+    ? 'http://localhost:3001/api'
+    : '/api';
 
   /**
    * Generic fetch wrapper with error handling
