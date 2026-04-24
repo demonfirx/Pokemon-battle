@@ -17,6 +17,10 @@ const Battle = (() => {
   let spriteIds = {};
   let typewriterTimeout = null; // track active typewriter
 
+  // Stat stages tracking
+  let playerStatStages = { attack: 0, defense: 0, speed: 0 };
+  let opponentStatStages = { attack: 0, defense: 0, speed: 0 };
+
   // DOM refs (cached on init)
   const $ = (id) => document.getElementById(id);
 
@@ -63,6 +67,12 @@ const Battle = (() => {
     $('player-sprite').className = 'pokemon-sprite player-sprite';
     $('opponent-sprite').className = 'pokemon-sprite opponent-sprite';
     isAnimating = false;
+
+    // Reset stat stages
+    playerStatStages = { attack: 0, defense: 0, speed: 0 };
+    opponentStatStages = { attack: 0, defense: 0, speed: 0 };
+    renderStatStages('player', playerStatStages);
+    renderStatStages('opponent', opponentStatStages);
 
     // Init PP bar
     updatePpBar();
@@ -165,14 +175,23 @@ const Battle = (() => {
     moves.forEach(move => {
       const btn = document.createElement('button');
       const moveType = (move.type || 'normal').toLowerCase();
-      btn.className = `move-btn move-${moveType}`;
+      const isStatusMove = move.power === 0 || move.power === null || move.power === undefined && move.category === 'status';
+      btn.className = `move-btn move-${moveType}${isStatusMove ? ' move-status' : ''}`;
       btn.dataset.moveId = move.id || move.name;
 
       const noPp = move.currentPp <= 0;
-      btn.innerHTML = `
-        ${move.name}
-        <span class="move-pp">PP ${move.currentPp}/${move.maxPp}</span>
-      `;
+      if (isStatusMove) {
+        btn.innerHTML = `
+          ${move.name}
+          <span class="move-status-label">STATUS</span>
+          <span class="move-pp">PP ${move.currentPp}/${move.maxPp}</span>
+        `;
+      } else {
+        btn.innerHTML = `
+          ${move.name}
+          <span class="move-pp">PP ${move.currentPp}/${move.maxPp}</span>
+        `;
+      }
       if (noPp) btn.disabled = true;
       btn.addEventListener('click', () => handleMoveClick(move));
       grid.appendChild(btn);
@@ -199,6 +218,9 @@ const Battle = (() => {
 
       // Process turn results
       await processTurnResult(result, move);
+
+      // Parse and apply stat stage changes from turn log
+      parseAndApplyStatChanges(result.turnLog || []);
 
       // Re-render moves to update PP display
       if (playerPokemon._battleMoves) {
@@ -255,6 +277,138 @@ const Battle = (() => {
       }
     }
     return info;
+  }
+
+  /**
+   * Parse turn log for stat stage changes (buffs/debuffs)
+   * Patterns: "X's Attack rose!", "X's Defense sharply rose!",
+   *           "X's Speed fell!", "X's Attack sharply fell!"
+   */
+  function parseAndApplyStatChanges(turnLog) {
+    if (!turnLog || !Array.isArray(turnLog)) return;
+
+    const statMap = {
+      'attack': 'attack', 'atk': 'attack',
+      'defense': 'defense', 'def': 'defense',
+      'speed': 'speed', 'spd': 'speed',
+      'special attack': 'attack', 'sp. atk': 'attack',
+      'special defense': 'defense', 'sp. def': 'defense',
+    };
+
+    for (const line of turnLog) {
+      const lower = line.toLowerCase();
+
+      // Match patterns like "Pikachu's Attack rose!" or "Pikachu's Defense sharply fell!"
+      const roseMatch = line.match(/(.+?)'s\s+(\w[\w\s.]*?)\s+(sharply\s+)?rose/i);
+      const fellMatch = line.match(/(.+?)'s\s+(\w[\w\s.]*?)\s+(sharply\s+)?fell/i);
+
+      if (roseMatch) {
+        const pokeName = roseMatch[1].trim();
+        const statName = roseMatch[2].trim().toLowerCase();
+        const sharply = !!roseMatch[3];
+        const delta = sharply ? 2 : 1;
+        const stat = statMap[statName];
+        if (!stat) continue;
+
+        const isPlayer = pokeName.toLowerCase() === playerPokemon.name.toLowerCase();
+        const stages = isPlayer ? playerStatStages : opponentStatStages;
+        const who = isPlayer ? 'player' : 'opponent';
+
+        stages[stat] = Math.min(6, stages[stat] + delta);
+        renderStatStages(who, stages);
+
+        // Show buff overlay on the pokemon that got buffed
+        showStatOverlay(who, 'buff');
+
+        // Show effectiveness-style text
+        const label = stat.charAt(0).toUpperCase() + stat.slice(1);
+        const text = sharply ? `${label} sharply rose!` : `${label} rose!`;
+        showStatChangeText(text, true);
+      }
+
+      if (fellMatch) {
+        const pokeName = fellMatch[1].trim();
+        const statName = fellMatch[2].trim().toLowerCase();
+        const sharply = !!fellMatch[3];
+        const delta = sharply ? 2 : 1;
+        const stat = statMap[statName];
+        if (!stat) continue;
+
+        const isPlayer = pokeName.toLowerCase() === playerPokemon.name.toLowerCase();
+        const stages = isPlayer ? playerStatStages : opponentStatStages;
+        const who = isPlayer ? 'player' : 'opponent';
+
+        stages[stat] = Math.max(-6, stages[stat] - delta);
+        renderStatStages(who, stages);
+
+        // Show debuff overlay on the pokemon that got debuffed
+        showStatOverlay(who, 'debuff');
+
+        // Show effectiveness-style text
+        const label = stat.charAt(0).toUpperCase() + stat.slice(1);
+        const text = sharply ? `${label} sharply fell!` : `${label} fell!`;
+        showStatChangeText(text, false);
+      }
+    }
+  }
+
+  /**
+   * Render stat stage badges for player or opponent
+   */
+  function renderStatStages(who, stages) {
+    const container = $(`${who}-stat-stages`);
+    if (!container) return;
+    container.innerHTML = '';
+
+    for (const [stat, stage] of Object.entries(stages)) {
+      if (stage === 0) continue;
+
+      const badge = document.createElement('span');
+      const isBuff = stage > 0;
+      badge.className = `stat-badge ${isBuff ? 'buff' : 'debuff'}`;
+
+      const label = stat.substring(0, 3).toUpperCase();
+      const absStage = Math.abs(stage);
+      const arrows = isBuff
+        ? '▲'.repeat(Math.min(absStage, 3))
+        : '▼'.repeat(Math.min(absStage, 3));
+
+      badge.innerHTML = `${label}<span class="stage-arrows">${arrows}</span>`;
+      container.appendChild(badge);
+    }
+  }
+
+  /**
+   * Show buff/debuff shimmer overlay on a pokemon sprite
+   */
+  function showStatOverlay(who, type) {
+    const spriteContainer = document.querySelector(
+      who === 'player' ? '.player-sprite-container' : '.opponent-sprite-container'
+    );
+    if (!spriteContainer) return;
+
+    // Remove any existing overlay
+    const existing = spriteContainer.querySelector('.buff-overlay, .debuff-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = type === 'buff' ? 'buff-overlay' : 'debuff-overlay';
+    spriteContainer.appendChild(overlay);
+
+    // Remove after animation
+    setTimeout(() => overlay.remove(), 850);
+  }
+
+  /**
+   * Show stat change text (like effectiveness text but for buffs/debuffs)
+   */
+  function showStatChangeText(text, isBuff) {
+    const arena = document.querySelector('.battle-arena');
+    const el = document.createElement('div');
+    el.className = `effectiveness-text ${isBuff ? 'buff-text' : 'debuff-text'}`;
+    el.textContent = text;
+    arena.appendChild(el);
+    setTimeout(() => el.remove(), 1500);
   }
 
   /**

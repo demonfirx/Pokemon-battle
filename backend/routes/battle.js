@@ -12,17 +12,45 @@ function generateId() {
   return Math.random().toString(36).substring(2, 10);
 }
 
-// Helper: clone pokemon for battle (add currentHp)
+// Helper: clone pokemon for battle (add currentHp + statStages)
 function createBattlePokemon(poke) {
   return {
     ...poke,
     currentHp: poke.hp,
     maxHp: poke.hp,
+    statStages: { attack: 0, defense: 0, speed: 0 },
     moves: poke.moves.map(moveId => {
       const move = moves[moveId];
       return move || { id: moveId, name: moveId, type: 'normal', power: 40, accuracy: 100 };
     })
   };
+}
+
+// Helper: get stat stage multiplier
+function getStatMultiplier(stages) {
+  return stages >= 0 ? (2 + stages) / 2 : 2 / (2 + Math.abs(stages));
+}
+
+// Helper: get effective speed (base speed * stage multiplier)
+function getEffectiveSpeed(pokemon) {
+  return pokemon.speed * getStatMultiplier(pokemon.statStages.speed);
+}
+
+// Helper: get stage change description
+function getStageChangeText(pokemonName, stat, stages) {
+  const statName = stat.charAt(0).toUpperCase() + stat.slice(1);
+  if (stages >= 2) return `${pokemonName}'s ${statName} sharply rose!`;
+  if (stages === 1) return `${pokemonName}'s ${statName} rose!`;
+  if (stages <= -2) return `${pokemonName}'s ${statName} sharply fell!`;
+  if (stages === -1) return `${pokemonName}'s ${statName} fell!`;
+  return '';
+}
+
+// Helper: apply stat stage change (clamped to -6..+6)
+function applyStatChange(pokemon, stat, stages) {
+  const oldStage = pokemon.statStages[stat];
+  pokemon.statStages[stat] = Math.max(-6, Math.min(6, oldStage + stages));
+  return pokemon.statStages[stat] - oldStage; // actual change applied
 }
 
 // Helper: get type effectiveness multiplier
@@ -38,13 +66,13 @@ function getTypeMultiplier(moveType, defenderType) {
   return 1;
 }
 
-// Helper: calculate damage
+// Helper: calculate damage (with stat stage multipliers)
 // Formula from README: ((2 * Level / 5 + 2) * Power * Atk/Def) / 50 + 2) * TypeMultiplier * Random(0.85-1.0)
 function calculateDamage(attacker, defender, move) {
   const level = 50; // Fixed level for v1
   const power = move.power;
-  const atk = attacker.attack;
-  const def = defender.defense;
+  const atk = attacker.attack * getStatMultiplier(attacker.statStages.attack);
+  const def = defender.defense * getStatMultiplier(defender.statStages.defense);
   const typeMultiplier = getTypeMultiplier(move.type, defender.type);
   const random = Math.random() * (1.0 - 0.85) + 0.85;
 
@@ -134,8 +162,8 @@ router.post('/move', (req, res) => {
 
   const turnLog = [];
 
-  // Determine turn order by speed
-  const playerFirst = battle.player.speed >= battle.cpu.speed;
+  // Determine turn order by effective speed (base speed * stage multiplier)
+  const playerFirst = getEffectiveSpeed(battle.player) >= getEffectiveSpeed(battle.cpu);
 
   const first = playerFirst
     ? { attacker: battle.player, defender: battle.cpu, move: playerMove, label: 'player' }
@@ -184,12 +212,34 @@ router.post('/move', (req, res) => {
   });
 });
 
-// Execute a single attack
+// Execute a single attack (or status move)
 function executeAttack(action, turnLog) {
   const { attacker, defender, move, label } = action;
   const attackerName = attacker.name;
 
   turnLog.push(`${attackerName} used ${move.name}!`);
+
+  // Handle status moves (power === 0 with effect)
+  if (move.power === 0 && move.effect) {
+    // Check accuracy first
+    if (!checkAccuracy(move)) {
+      turnLog.push(`${attackerName}'s attack missed!`);
+      return { damage: 0, missed: true };
+    }
+
+    const effect = move.effect;
+    const target = effect.target === 'self' ? attacker : defender;
+    const actualChange = applyStatChange(target, effect.stat, effect.stages);
+
+    if (actualChange === 0) {
+      const statName = effect.stat.charAt(0).toUpperCase() + effect.stat.slice(1);
+      turnLog.push(`${target.name}'s ${statName} won't go any ${effect.stages > 0 ? 'higher' : 'lower'}!`);
+    } else {
+      turnLog.push(getStageChangeText(target.name, effect.stat, effect.stages));
+    }
+
+    return { damage: 0, statusMove: true };
+  }
 
   // Check accuracy
   if (!checkAccuracy(move)) {

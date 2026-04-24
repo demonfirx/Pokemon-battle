@@ -187,5 +187,65 @@
     "accuracy": 100,
     "pp": 15,
     "description": "Crunches with sharp fangs. May lower Defense."
+  },
+  "swords-dance": {
+    "id": "swords-dance",
+    "name": "Swords Dance",
+    "type": "normal",
+    "power": 0,
+    "accuracy": 100,
+    "pp": 20,
+    "description": "Sharply raises Attack!",
+    "effect": { "stat": "attack", "stages": 2, "target": "self" }
+  },
+  "iron-defense": {
+    "id": "iron-defense",
+    "name": "Iron Defense",
+    "type": "steel",
+    "power": 0,
+    "accuracy": 100,
+    "pp": 15,
+    "description": "Sharply raises Defense!",
+    "effect": { "stat": "defense", "stages": 2, "target": "self" }
+  },
+  "agility": {
+    "id": "agility",
+    "name": "Agility",
+    "type": "psychic",
+    "power": 0,
+    "accuracy": 100,
+    "pp": 30,
+    "description": "Sharply raises Speed!",
+    "effect": { "stat": "speed", "stages": 2, "target": "self" }
+  },
+  "growl": {
+    "id": "growl",
+    "name": "Growl",
+    "type": "normal",
+    "power": 0,
+    "accuracy": 100,
+    "pp": 40,
+    "description": "Lowers opponent's Attack!",
+    "effect": { "stat": "attack", "stages": -1, "target": "opponent" }
+  },
+  "scary-face": {
+    "id": "scary-face",
+    "name": "Scary Face",
+    "type": "normal",
+    "power": 0,
+    "accuracy": 100,
+    "pp": 10,
+    "description": "Sharply lowers opponent's Speed!",
+    "effect": { "stat": "speed", "stages": -2, "target": "opponent" }
+  },
+  "tail-whip": {
+    "id": "tail-whip",
+    "name": "Tail Whip",
+    "type": "normal",
+    "power": 0,
+    "accuracy": 100,
+    "pp": 30,
+    "description": "Lowers opponent's Defense!",
+    "effect": { "stat": "defense", "stages": -1, "target": "opponent" }
   }
 }

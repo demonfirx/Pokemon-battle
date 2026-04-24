@@ -7,7 +7,7 @@
     "attack": 209,
     "defense": 166,
     "speed": 262,
-    "moves": ["thunderbolt", "quick-attack", "iron-tail", "electro-ball"]
+    "moves": ["thunderbolt", "quick-attack", "iron-tail", "agility"]
   },
   {
     "id": 2,
@@ -17,7 +17,7 @@
     "attack": 267,
     "defense": 238,
     "speed": 299,
-    "moves": ["flamethrower", "air-slash", "dragon-claw", "fire-punch"]
+    "moves": ["flamethrower", "air-slash", "dragon-claw", "swords-dance"]
   },
   {
     "id": 3,
@@ -27,7 +27,7 @@
     "attack": 237,
     "defense": 299,
     "speed": 234,
-    "moves": ["hydro-pump", "ice-beam", "bite", "water-pulse"]
+    "moves": ["hydro-pump", "ice-beam", "bite", "iron-defense"]
   },
   {
     "id": 4,
@@ -37,7 +37,7 @@
     "attack": 241,
     "defense": 246,
     "speed": 236,
-    "moves": ["solar-beam", "sludge-bomb", "razor-leaf", "body-slam"]
+    "moves": ["solar-beam", "sludge-bomb", "razor-leaf", "growl"]
   },
   {
     "id": 5,
@@ -47,7 +47,7 @@
     "attack": 269,
     "defense": 196,
     "speed": 306,
-    "moves": ["shadow-ball", "sludge-bomb", "dark-pulse", "thunderbolt"]
+    "moves": ["shadow-ball", "sludge-bomb", "dark-pulse", "scary-face"]
   },
   {
     "id": 6,
@@ -57,6 +57,6 @@
     "attack": 256,
     "defense": 229,
     "speed": 174,
-    "moves": ["body-slam", "earthquake", "ice-punch", "crunch"]
+    "moves": ["body-slam", "earthquake", "ice-punch", "tail-whip"]
   }
 ]

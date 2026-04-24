@@ -14,11 +14,35 @@ function createBattlePokemon(poke) {
     ...poke,
     currentHp: poke.hp,
     maxHp: poke.hp,
+    statStages: { attack: 0, defense: 0, speed: 0 },
     moves: poke.moves.map(moveId => {
       const move = moves[moveId];
       return move || { id: moveId, name: moveId, type: 'normal', power: 40, accuracy: 100 };
     })
   };
+}
+
+function getStatMultiplier(stages) {
+  return stages >= 0 ? (2 + stages) / 2 : 2 / (2 + Math.abs(stages));
+}
+
+function getEffectiveSpeed(pokemon) {
+  return pokemon.speed * getStatMultiplier(pokemon.statStages.speed);
+}
+
+function getStageChangeText(pokemonName, stat, stages) {
+  const statName = stat.charAt(0).toUpperCase() + stat.slice(1);
+  if (stages >= 2) return `${pokemonName}'s ${statName} sharply rose!`;
+  if (stages === 1) return `${pokemonName}'s ${statName} rose!`;
+  if (stages <= -2) return `${pokemonName}'s ${statName} sharply fell!`;
+  if (stages === -1) return `${pokemonName}'s ${statName} fell!`;
+  return '';
+}
+
+function applyStatChange(pokemon, stat, stages) {
+  const oldStage = pokemon.statStages[stat];
+  pokemon.statStages[stat] = Math.max(-6, Math.min(6, oldStage + stages));
+  return pokemon.statStages[stat] - oldStage;
 }
 
 function getTypeMultiplier(moveType, defenderType) {
@@ -33,8 +57,8 @@ function getTypeMultiplier(moveType, defenderType) {
 function calculateDamage(attacker, defender, move) {
   const level = 50;
   const power = move.power;
-  const atk = attacker.attack;
-  const def = defender.defense;
+  const atk = attacker.attack * getStatMultiplier(attacker.statStages.attack);
+  const def = defender.defense * getStatMultiplier(defender.statStages.defense);
   const typeMultiplier = getTypeMultiplier(move.type, defender.type);
   const random = Math.random() * (1.0 - 0.85) + 0.85;
   const baseDamage = ((2 * level / 5 + 2) * power * atk / def) / 50 + 2;
@@ -55,6 +79,25 @@ function checkAccuracy(move) {
 function executeAttack(action, turnLog) {
   const { attacker, defender, move } = action;
   turnLog.push(`${attacker.name} used ${move.name}!`);
+
+  // Handle status moves (power === 0 with effect)
+  if (move.power === 0 && move.effect) {
+    if (!checkAccuracy(move)) {
+      turnLog.push(`${attacker.name}'s attack missed!`);
+      return { damage: 0, missed: true };
+    }
+    const effect = move.effect;
+    const target = effect.target === 'self' ? attacker : defender;
+    const actualChange = applyStatChange(target, effect.stat, effect.stages);
+    if (actualChange === 0) {
+      const statName = effect.stat.charAt(0).toUpperCase() + effect.stat.slice(1);
+      turnLog.push(`${target.name}'s ${statName} won't go any ${effect.stages > 0 ? 'higher' : 'lower'}!`);
+    } else {
+      turnLog.push(getStageChangeText(target.name, effect.stat, effect.stages));
+    }
+    return { damage: 0, statusMove: true };
+  }
+
   if (!checkAccuracy(move)) {
     turnLog.push(`${attacker.name}'s attack missed!`);
     return { damage: 0, missed: true };
@@ -125,7 +168,7 @@ module.exports = (req, res) => {
 
     const cpuMove = battle.cpu.moves[Math.floor(Math.random() * battle.cpu.moves.length)];
     const turnLog = [];
-    const playerFirst = battle.player.speed >= battle.cpu.speed;
+    const playerFirst = getEffectiveSpeed(battle.player) >= getEffectiveSpeed(battle.cpu);
 
     const first = playerFirst
       ? { attacker: battle.player, defender: battle.cpu, move: playerMove, label: 'player' }
