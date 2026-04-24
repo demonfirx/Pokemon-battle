@@ -1,0 +1,57 @@
+{
+  "fire": {
+    "strong": ["grass"],
+    "weak": ["water", "fire"]
+  },
+  "water": {
+    "strong": ["fire"],
+    "weak": ["grass", "water"]
+  },
+  "grass": {
+    "strong": ["water"],
+    "weak": ["fire", "grass"]
+  },
+  "electric": {
+    "strong": ["water"],
+    "weak": ["electric", "grass"]
+  },
+  "ghost": {
+    "strong": ["ghost"],
+    "weak": [],
+    "immune": ["normal"]
+  },
+  "normal": {
+    "strong": [],
+    "weak": [],
+    "immune": ["ghost"]
+  },
+  "poison": {
+    "strong": ["grass"],
+    "weak": ["poison", "ghost"]
+  },
+  "ground": {
+    "strong": ["fire", "electric", "poison"],
+    "weak": ["grass"],
+    "immune": []
+  },
+  "ice": {
+    "strong": ["grass"],
+    "weak": ["fire", "water", "ice"]
+  },
+  "dark": {
+    "strong": ["ghost"],
+    "weak": ["dark"]
+  },
+  "dragon": {
+    "strong": ["dragon"],
+    "weak": []
+  },
+  "flying": {
+    "strong": ["grass"],
+    "weak": ["electric"]
+  },
+  "steel": {
+    "strong": [],
+    "weak": ["fire", "water", "electric", "steel"]
+  }
+}

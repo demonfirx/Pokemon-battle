@@ -1,0 +1,191 @@
+{
+  "thunderbolt": {
+    "id": "thunderbolt",
+    "name": "Thunderbolt",
+    "type": "electric",
+    "power": 90,
+    "accuracy": 100,
+    "pp": 15,
+    "description": "A strong electric blast that may paralyze the foe."
+  },
+  "quick-attack": {
+    "id": "quick-attack",
+    "name": "Quick Attack",
+    "type": "normal",
+    "power": 40,
+    "accuracy": 100,
+    "pp": 30,
+    "description": "An extremely fast attack that always strikes first."
+  },
+  "iron-tail": {
+    "id": "iron-tail",
+    "name": "Iron Tail",
+    "type": "steel",
+    "power": 100,
+    "accuracy": 75,
+    "pp": 15,
+    "description": "The foe is slammed with a steel-hard tail."
+  },
+  "electro-ball": {
+    "id": "electro-ball",
+    "name": "Electro Ball",
+    "type": "electric",
+    "power": 80,
+    "accuracy": 100,
+    "pp": 10,
+    "description": "Hurls an electric orb. The faster the user, the more damage."
+  },
+  "flamethrower": {
+    "id": "flamethrower",
+    "name": "Flamethrower",
+    "type": "fire",
+    "power": 90,
+    "accuracy": 100,
+    "pp": 15,
+    "description": "A powerful fire attack that may inflict a burn."
+  },
+  "air-slash": {
+    "id": "air-slash",
+    "name": "Air Slash",
+    "type": "flying",
+    "power": 75,
+    "accuracy": 95,
+    "pp": 15,
+    "description": "The user attacks with a blade of air."
+  },
+  "dragon-claw": {
+    "id": "dragon-claw",
+    "name": "Dragon Claw",
+    "type": "dragon",
+    "power": 80,
+    "accuracy": 100,
+    "pp": 15,
+    "description": "Sharp, huge claws hook and slash the foe."
+  },
+  "fire-punch": {
+    "id": "fire-punch",
+    "name": "Fire Punch",
+    "type": "fire",
+    "power": 75,
+    "accuracy": 100,
+    "pp": 15,
+    "description": "A fiery punch that may burn the foe."
+  },
+  "hydro-pump": {
+    "id": "hydro-pump",
+    "name": "Hydro Pump",
+    "type": "water",
+    "power": 110,
+    "accuracy": 80,
+    "pp": 5,
+    "description": "A powerful blast of water under great pressure."
+  },
+  "ice-beam": {
+    "id": "ice-beam",
+    "name": "Ice Beam",
+    "type": "ice",
+    "power": 90,
+    "accuracy": 100,
+    "pp": 10,
+    "description": "An ice-cold beam of energy that may freeze the foe."
+  },
+  "bite": {
+    "id": "bite",
+    "name": "Bite",
+    "type": "dark",
+    "power": 60,
+    "accuracy": 100,
+    "pp": 25,
+    "description": "Bites with vicious fangs. May cause flinching."
+  },
+  "water-pulse": {
+    "id": "water-pulse",
+    "name": "Water Pulse",
+    "type": "water",
+    "power": 60,
+    "accuracy": 100,
+    "pp": 20,
+    "description": "Attacks with ultrasonic waves. May confuse the foe."
+  },
+  "solar-beam": {
+    "id": "solar-beam",
+    "name": "Solar Beam",
+    "type": "grass",
+    "power": 120,
+    "accuracy": 100,
+    "pp": 10,
+    "description": "A powerful beam of solar energy."
+  },
+  "sludge-bomb": {
+    "id": "sludge-bomb",
+    "name": "Sludge Bomb",
+    "type": "poison",
+    "power": 90,
+    "accuracy": 100,
+    "pp": 10,
+    "description": "Hurls unsanitary sludge at the foe. May poison."
+  },
+  "razor-leaf": {
+    "id": "razor-leaf",
+    "name": "Razor Leaf",
+    "type": "grass",
+    "power": 55,
+    "accuracy": 95,
+    "pp": 25,
+    "description": "Cuts the foe with sharp-edged leaves."
+  },
+  "body-slam": {
+    "id": "body-slam",
+    "name": "Body Slam",
+    "type": "normal",
+    "power": 85,
+    "accuracy": 100,
+    "pp": 15,
+    "description": "A full-body charge that may paralyze the foe."
+  },
+  "shadow-ball": {
+    "id": "shadow-ball",
+    "name": "Shadow Ball",
+    "type": "ghost",
+    "power": 80,
+    "accuracy": 100,
+    "pp": 15,
+    "description": "Hurls a shadowy blob at the foe."
+  },
+  "dark-pulse": {
+    "id": "dark-pulse",
+    "name": "Dark Pulse",
+    "type": "dark",
+    "power": 80,
+    "accuracy": 100,
+    "pp": 15,
+    "description": "Releases a horrible aura imbued with dark thoughts."
+  },
+  "earthquake": {
+    "id": "earthquake",
+    "name": "Earthquake",
+    "type": "ground",
+    "power": 100,
+    "accuracy": 100,
+    "pp": 10,
+    "description": "A powerful quake that hits all adjacent Pokemon."
+  },
+  "ice-punch": {
+    "id": "ice-punch",
+    "name": "Ice Punch",
+    "type": "ice",
+    "power": 75,
+    "accuracy": 100,
+    "pp": 15,
+    "description": "An icy punch that may freeze the foe."
+  },
+  "crunch": {
+    "id": "crunch",
+    "name": "Crunch",
+    "type": "dark",
+    "power": 80,
+    "accuracy": 100,
+    "pp": 15,
+    "description": "Crunches with sharp fangs. May lower Defense."
+  }
+}

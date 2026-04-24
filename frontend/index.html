@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pokémon Battle</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- ===== LOADING SCREEN ===== -->
+  <div id="loading-screen" class="screen active">
+    <div class="loading-content">
+      <div class="pokeball-loader">
+        <div class="pokeball">
+          <div class="pokeball-top"></div>
+          <div class="pokeball-center"></div>
+          <div class="pokeball-bottom"></div>
+        </div>
+      </div>
+      <p class="loading-text">Loading<span class="dots">...</span></p>
+    </div>
+  </div>
+
+  <!-- ===== SELECT SCREEN ===== -->
+  <div id="select-screen" class="screen">
+    <div class="select-container">
+      <h1 class="title">POKÉMON BATTLE</h1>
+      <p class="subtitle">Choose your Pokémon!</p>
+      <div id="pokemon-roster" class="pokemon-grid">
+        <!-- Pokemon cards injected by JS -->
+      </div>
+      <div class="select-footer">
+        <div id="selected-preview" class="selected-preview hidden">
+          <img id="selected-sprite" src="" alt="">
+          <div class="selected-info">
+            <span id="selected-name"></span>
+            <span id="selected-type" class="type-badge"></span>
+          </div>
+          <button id="btn-battle" class="btn-battle">BATTLE!</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BATTLE SCREEN ===== -->
+  <div id="battle-screen" class="screen">
+    <div class="battle-container">
+      <!-- Battle Arena -->
+      <div class="battle-arena">
+        <!-- Opponent (top-right) -->
+        <div class="pokemon-slot opponent-slot">
+          <div class="pokemon-info-bar opponent-bar">
+            <div class="pokemon-name-row">
+              <span id="opponent-name" class="pokemon-label"></span>
+              <span id="opponent-level" class="pokemon-level">Lv50</span>
+            </div>
+            <div class="hp-container">
+              <span class="hp-label">HP</span>
+              <div class="hp-bar-bg">
+                <div id="opponent-hp-bar" class="hp-bar-fill" style="width:100%"></div>
+              </div>
+            </div>
+            <div class="hp-text-row">
+              <span id="opponent-hp-text" class="hp-text"></span>
+            </div>
+          </div>
+          <div class="pokemon-sprite-container opponent-sprite-container">
+            <div class="platform opponent-platform"></div>
+            <img id="opponent-sprite" class="pokemon-sprite opponent-sprite" src="" alt="">
+            <div id="opponent-damage-number" class="damage-number hidden"></div>
+          </div>
+        </div>
+
+        <!-- Player (bottom-left) -->
+        <div class="pokemon-slot player-slot">
+          <div class="pokemon-sprite-container player-sprite-container">
+            <div class="platform player-platform"></div>
+            <img id="player-sprite" class="pokemon-sprite player-sprite" src="" alt="">
+            <div id="player-damage-number" class="damage-number hidden"></div>
+          </div>
+          <div class="pokemon-info-bar player-bar">
+            <div class="pokemon-name-row">
+              <span id="player-name" class="pokemon-label"></span>
+              <span id="player-level" class="pokemon-level">Lv50</span>
+            </div>
+            <div class="hp-container">
+              <span class="hp-label">HP</span>
+              <div class="hp-bar-bg">
+                <div id="player-hp-bar" class="hp-bar-fill" style="width:100%"></div>
+              </div>
+            </div>
+            <div class="hp-text-row">
+              <span id="player-hp-text" class="hp-text"></span>
+            </div>
+            <div class="pp-container">
+              <span class="pp-label">PP</span>
+              <div class="pp-bar-bg">
+                <div id="player-pp-bar" class="pp-bar-fill" style="width:100%"></div>
+              </div>
+            </div>
+            <div class="pp-text-row">
+              <span id="player-pp-text" class="pp-text"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Message Box -->
+      <div class="message-box">
+        <p id="battle-message" class="battle-message-text">What will you do?</p>
+      </div>
+
+      <!-- Action Panel -->
+      <div id="action-panel" class="action-panel">
+        <div id="move-buttons" class="move-grid">
+          <!-- Move buttons injected by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RESULT SCREEN ===== -->
+  <div id="result-screen" class="screen">
+    <div class="result-container">
+      <div id="result-sprite-container" class="result-sprite-container">
+        <img id="result-sprite" class="result-sprite" src="" alt="">
+      </div>
+      <h1 id="result-title" class="result-title"></h1>
+      <p id="result-message" class="result-message"></p>
+      <button id="btn-play-again" class="btn-battle btn-play-again">PLAY AGAIN</button>
+    </div>
+  </div>
+
+  <!-- Flash overlay for attack animations -->
+  <div id="flash-overlay" class="flash-overlay hidden"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/battle.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

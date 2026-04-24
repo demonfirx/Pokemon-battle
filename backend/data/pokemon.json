@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "name": "Pikachu",
+    "type": "electric",
+    "hp": 274,
+    "attack": 209,
+    "defense": 166,
+    "speed": 262,
+    "moves": ["thunderbolt", "quick-attack", "iron-tail", "electro-ball"]
+  },
+  {
+    "id": 2,
+    "name": "Charizard",
+    "type": "fire",
+    "hp": 360,
+    "attack": 267,
+    "defense": 238,
+    "speed": 299,
+    "moves": ["flamethrower", "air-slash", "dragon-claw", "fire-punch"]
+  },
+  {
+    "id": 3,
+    "name": "Blastoise",
+    "type": "water",
+    "hp": 362,
+    "attack": 237,
+    "defense": 299,
+    "speed": 234,
+    "moves": ["hydro-pump", "ice-beam", "bite", "water-pulse"]
+  },
+  {
+    "id": 4,
+    "name": "Venusaur",
+    "type": "grass",
+    "hp": 364,
+    "attack": 241,
+    "defense": 246,
+    "speed": 236,
+    "moves": ["solar-beam", "sludge-bomb", "razor-leaf", "body-slam"]
+  },
+  {
+    "id": 5,
+    "name": "Gengar",
+    "type": "ghost",
+    "hp": 324,
+    "attack": 269,
+    "defense": 196,
+    "speed": 306,
+    "moves": ["shadow-ball", "sludge-bomb", "dark-pulse", "thunderbolt"]
+  },
+  {
+    "id": 6,
+    "name": "Snorlax",
+    "type": "normal",
+    "hp": 524,
+    "attack": 256,
+    "defense": 229,
+    "speed": 174,
+    "moves": ["body-slam", "earthquake", "ice-punch", "crunch"]
+  }
+]

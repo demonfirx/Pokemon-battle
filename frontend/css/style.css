@@ -1,0 +1,1067 @@
+/* ============================================
+   POKEMON BATTLE — STYLE.CSS
+   Dark theme, pixel-art vibe, Game Boy feel
+   ============================================ */
+
+/* ---------- RESET & BASE ---------- */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg-dark: #1a1a2e;
+  --bg-darker: #0f0f23;
+  --bg-card: #16213e;
+  --bg-panel: #1c2541;
+  --accent: #e94560;
+  --accent-glow: #ff6b81;
+  --text-primary: #eaeaea;
+  --text-secondary: #a0a0b0;
+  --hp-green: #4caf50;
+  --hp-yellow: #ffeb3b;
+  --hp-red: #f44336;
+  --type-fire: #f08030;
+  --type-water: #6890f0;
+  --type-grass: #78c850;
+  --type-electric: #f8d030;
+  --type-ghost: #705898;
+  --type-normal: #a8a878;
+  --type-poison: #a040a0;
+  --type-ice: #98d8d8;
+  --type-fighting: #c03028;
+  --type-psychic: #f85888;
+  --border-pixel: #3a3a5c;
+  --font-pixel: 'Press Start 2P', monospace;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font-pixel);
+  background: var(--bg-darker);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow: hidden;
+  image-rendering: pixelated;
+}
+
+/* ---------- SCREENS ---------- */
+.screen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+
+.screen.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ---------- LOADING SCREEN ---------- */
+#loading-screen {
+  background: var(--bg-darker);
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.loading-content {
+  text-align: center;
+}
+
+.pokeball-loader {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.pokeball {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  animation: pokeball-bounce 1s ease-in-out infinite;
+}
+
+.pokeball-top {
+  width: 80px;
+  height: 40px;
+  background: var(--accent);
+  border-radius: 40px 40px 0 0;
+  border: 4px solid #333;
+  border-bottom: none;
+}
+
+.pokeball-bottom {
+  width: 80px;
+  height: 40px;
+  background: #eee;
+  border-radius: 0 0 40px 40px;
+  border: 4px solid #333;
+  border-top: none;
+}
+
+.pokeball-center {
+  width: 80px;
+  height: 8px;
+  background: #333;
+  position: relative;
+  z-index: 2;
+}
+
+.pokeball-center::after {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background: #eee;
+  border: 4px solid #333;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes pokeball-bounce {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-20px) rotate(-10deg); }
+  50% { transform: translateY(0) rotate(0deg); }
+  75% { transform: translateY(-10px) rotate(5deg); }
+}
+
+.loading-text {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  letter-spacing: 2px;
+}
+
+.dots {
+  animation: dots-blink 1.5s steps(4) infinite;
+}
+
+@keyframes dots-blink {
+  0% { content: ''; opacity: 0.2; }
+  25% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+  75% { opacity: 1; }
+}
+
+/* ---------- SELECT SCREEN ---------- */
+#select-screen {
+  background: linear-gradient(180deg, var(--bg-darker) 0%, var(--bg-dark) 100%);
+  overflow-y: auto;
+}
+
+.select-container {
+  width: 100%;
+  max-width: 900px;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.title {
+  font-size: 1.5rem;
+  color: var(--accent);
+  text-shadow: 0 0 20px rgba(233, 69, 96, 0.5), 0 0 40px rgba(233, 69, 96, 0.2);
+  margin-bottom: 0.5rem;
+  letter-spacing: 3px;
+}
+
+.subtitle {
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  letter-spacing: 1px;
+}
+
+/* Pokemon Grid */
+.pokemon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Pokemon Card */
+.pokemon-card {
+  background: var(--bg-card);
+  border: 3px solid var(--border-pixel);
+  border-radius: 12px;
+  padding: 1rem 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.pokemon-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.pokemon-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+  box-shadow: 0 8px 25px rgba(233, 69, 96, 0.3);
+}
+
+.pokemon-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 15px rgba(233, 69, 96, 0.5), inset 0 0 15px rgba(233, 69, 96, 0.1);
+  transform: translateY(-4px) scale(1.03);
+}
+
+.pokemon-card.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 0.7rem;
+  color: var(--accent);
+}
+
+.card-sprite {
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  transition: transform 0.2s ease;
+}
+
+.pokemon-card:hover .card-sprite {
+  transform: scale(1.1);
+}
+
+.card-name {
+  display: block;
+  font-size: 0.5rem;
+  margin-top: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-primary);
+}
+
+.card-type {
+  display: inline-block;
+  font-size: 0.4rem;
+  margin-top: 0.4rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.card-stats {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+  font-size: 0.35rem;
+  color: var(--text-secondary);
+}
+
+.card-stats span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stat-value {
+  color: var(--text-primary);
+  font-size: 0.45rem;
+}
+
+/* Type colors */
+.type-fire { background: var(--type-fire); }
+.type-water { background: var(--type-water); }
+.type-grass { background: var(--type-grass); }
+.type-electric { background: var(--type-electric); }
+.type-ghost { background: var(--type-ghost); }
+.type-normal { background: var(--type-normal); }
+.type-poison { background: var(--type-poison); }
+.type-ice { background: var(--type-ice); }
+.type-fighting { background: var(--type-fighting); }
+.type-psychic { background: var(--type-psychic); }
+
+/* Selected Preview */
+.select-footer {
+  min-height: 80px;
+}
+
+.selected-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-panel);
+  border: 2px solid var(--border-pixel);
+  border-radius: 12px;
+  animation: slideUp 0.3s ease;
+}
+
+.selected-preview.hidden {
+  display: none;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.selected-preview img {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+}
+
+.selected-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  text-align: left;
+}
+
+#selected-name {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+}
+
+#selected-type {
+  font-size: 0.4rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #fff;
+  width: fit-content;
+}
+
+/* Battle Button */
+.btn-battle {
+  font-family: var(--font-pixel);
+  font-size: 0.7rem;
+  padding: 12px 32px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.2s ease;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 0 #b8354a, 0 6px 15px rgba(233, 69, 96, 0.3);
+  position: relative;
+  top: 0;
+}
+
+.btn-battle:hover {
+  background: var(--accent-glow);
+  box-shadow: 0 4px 0 #d44a5e, 0 6px 20px rgba(233, 69, 96, 0.5);
+}
+
+.btn-battle:active {
+  top: 3px;
+  box-shadow: 0 1px 0 #b8354a, 0 2px 5px rgba(233, 69, 96, 0.3);
+}
+
+/* ---------- BATTLE SCREEN ---------- */
+#battle-screen {
+  background: var(--bg-darker);
+}
+
+.battle-container {
+  width: 100%;
+  max-width: 800px;
+  height: 100vh;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+}
+
+/* Battle Arena */
+.battle-arena {
+  flex: 1;
+  position: relative;
+  background: linear-gradient(180deg,
+    #1a1a3e 0%,
+    #1e2a4a 40%,
+    #2a4a3a 60%,
+    #1e3a2a 100%
+  );
+  border: 3px solid var(--border-pixel);
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 300px;
+}
+
+/* Scanline effect */
+.battle-arena::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.05) 2px,
+    rgba(0,0,0,0.05) 4px
+  );
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Pokemon Slots */
+.pokemon-slot {
+  position: absolute;
+}
+
+.opponent-slot {
+  top: 1rem;
+  right: 1rem;
+  left: 40%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.player-slot {
+  bottom: 1rem;
+  left: 1rem;
+  right: 40%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Info Bars */
+.pokemon-info-bar {
+  background: rgba(15, 15, 35, 0.9);
+  border: 2px solid var(--border-pixel);
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-width: 220px;
+  z-index: 3;
+}
+
+.pokemon-name-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.pokemon-label {
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.pokemon-level {
+  font-size: 0.4rem;
+  color: var(--text-secondary);
+}
+
+.hp-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hp-label {
+  font-size: 0.4rem;
+  color: var(--hp-green);
+  font-weight: bold;
+}
+
+.hp-bar-bg {
+  flex: 1;
+  height: 8px;
+  background: #333;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #555;
+}
+
+.hp-bar-fill {
+  height: 100%;
+  background: var(--hp-green);
+  border-radius: 4px;
+  transition: width 0.8s ease, background-color 0.5s ease;
+  position: relative;
+}
+
+.hp-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%);
+  border-radius: 4px 4px 0 0;
+}
+
+.hp-text-row {
+  text-align: right;
+  margin-top: 2px;
+}
+
+.hp-text {
+  font-size: 0.4rem;
+  color: var(--text-secondary);
+}
+
+/* PP Bar */
+.pp-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.pp-label {
+  font-size: 0.4rem;
+  color: #64b5f6;
+  font-weight: bold;
+}
+
+.pp-bar-bg {
+  flex: 1;
+  height: 6px;
+  background: #333;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid #555;
+}
+
+.pp-bar-fill {
+  height: 100%;
+  background: #64b5f6;
+  border-radius: 3px;
+  transition: width 0.5s ease, background-color 0.5s ease;
+  position: relative;
+}
+
+.pp-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%);
+  border-radius: 3px 3px 0 0;
+}
+
+.pp-text-row {
+  text-align: right;
+  margin-top: 1px;
+}
+
+.pp-text {
+  font-size: 0.35rem;
+  color: #90caf9;
+}
+
+/* Sprite Containers */
+.pokemon-sprite-container {
+  position: relative;
+  z-index: 2;
+}
+
+.opponent-sprite-container {
+  margin-right: 2rem;
+  margin-top: 0.5rem;
+}
+
+.player-sprite-container {
+  margin-left: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Platforms */
+.platform {
+  width: 140px;
+  height: 20px;
+  border-radius: 50%;
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.opponent-platform {
+  background: radial-gradient(ellipse, rgba(100, 140, 100, 0.4) 0%, transparent 70%);
+}
+
+.player-platform {
+  background: radial-gradient(ellipse, rgba(100, 140, 100, 0.5) 0%, transparent 70%);
+}
+
+/* Sprites */
+.pokemon-sprite {
+  width: 140px;
+  height: 140px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+  position: relative;
+}
+
+.player-sprite {
+  transform: scaleX(-1);
+}
+
+/* Damage Numbers */
+.damage-number {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.2rem;
+  font-family: var(--font-pixel);
+  color: var(--accent);
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.damage-number.hidden {
+  display: none;
+}
+
+.damage-number.show {
+  display: block;
+  animation: damageFloat 1.2s ease-out forwards;
+}
+
+.damage-number.heal {
+  color: var(--hp-green);
+}
+
+.damage-number.miss {
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+}
+
+@keyframes damageFloat {
+  0% { opacity: 1; transform: translateX(-50%) translateY(0) scale(0.5); }
+  20% { transform: translateX(-50%) translateY(-10px) scale(1.2); }
+  40% { transform: translateX(-50%) translateY(-20px) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-50px) scale(0.8); }
+}
+
+/* Attack Animations */
+@keyframes attackRight {
+  0% { transform: scaleX(-1) translateX(0); }
+  30% { transform: scaleX(-1) translateX(-40px); }
+  50% { transform: scaleX(-1) translateX(60px); }
+  70% { transform: scaleX(-1) translateX(60px); }
+  100% { transform: scaleX(-1) translateX(0); }
+}
+
+@keyframes attackLeft {
+  0% { transform: translateX(0); }
+  30% { transform: translateX(40px); }
+  50% { transform: translateX(-60px); }
+  70% { transform: translateX(-60px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-5px); }
+  20% { transform: translateX(5px); }
+  30% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  50% { transform: translateX(-3px); }
+  60% { transform: translateX(3px); }
+  70% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
+
+@keyframes hitFlash {
+  0%, 100% { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)) brightness(1); }
+  25% { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)) brightness(3); }
+  50% { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)) brightness(1); }
+  75% { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)) brightness(2.5); }
+}
+
+@keyframes faintAnimation {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(40px); }
+}
+
+.sprite-attack-right {
+  animation: attackRight 0.6s ease-in-out;
+}
+
+.sprite-attack-left {
+  animation: attackLeft 0.6s ease-in-out;
+}
+
+.sprite-hit {
+  animation: hitFlash 0.4s ease, shake 0.5s ease;
+}
+
+.sprite-faint {
+  animation: faintAnimation 0.8s ease-in forwards;
+}
+
+/* Type-specific attack flashes */
+.flash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.flash-overlay.hidden {
+  display: none;
+}
+
+.flash-overlay.flash-fire {
+  display: block;
+  background: radial-gradient(circle, rgba(240, 128, 48, 0.4) 0%, transparent 70%);
+  animation: flashPulse 0.3s ease-out;
+}
+
+.flash-overlay.flash-water {
+  display: block;
+  background: radial-gradient(circle, rgba(104, 144, 240, 0.4) 0%, transparent 70%);
+  animation: flashPulse 0.3s ease-out;
+}
+
+.flash-overlay.flash-grass {
+  display: block;
+  background: radial-gradient(circle, rgba(120, 200, 80, 0.4) 0%, transparent 70%);
+  animation: flashPulse 0.3s ease-out;
+}
+
+.flash-overlay.flash-electric {
+  display: block;
+  background: radial-gradient(circle, rgba(248, 208, 48, 0.5) 0%, transparent 70%);
+  animation: flashPulse 0.15s ease-out 3;
+}
+
+.flash-overlay.flash-ghost {
+  display: block;
+  background: radial-gradient(circle, rgba(112, 88, 152, 0.4) 0%, transparent 70%);
+  animation: flashPulse 0.4s ease-out;
+}
+
+.flash-overlay.flash-normal {
+  display: block;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  animation: flashPulse 0.2s ease-out;
+}
+
+.flash-overlay.flash-poison {
+  display: block;
+  background: radial-gradient(circle, rgba(160, 64, 160, 0.4) 0%, transparent 70%);
+  animation: flashPulse 0.35s ease-out;
+}
+
+.flash-overlay.flash-ice {
+  display: block;
+  background: radial-gradient(circle, rgba(152, 216, 216, 0.4) 0%, transparent 70%);
+  animation: flashPulse 0.3s ease-out;
+}
+
+.flash-overlay.flash-fighting {
+  display: block;
+  background: radial-gradient(circle, rgba(192, 48, 40, 0.4) 0%, transparent 70%);
+  animation: flashPulse 0.2s ease-out 2;
+}
+
+.flash-overlay.flash-psychic {
+  display: block;
+  background: radial-gradient(circle, rgba(248, 88, 136, 0.4) 0%, transparent 70%);
+  animation: flashPulse 0.4s ease-out;
+}
+
+@keyframes flashPulse {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Super effective / not very effective text */
+.effectiveness-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.6rem;
+  font-family: var(--font-pixel);
+  z-index: 20;
+  text-shadow: 2px 2px 0 #000;
+  animation: effectivenessShow 1.5s ease-out forwards;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.effectiveness-text.super-effective {
+  color: #ff6b6b;
+}
+
+.effectiveness-text.not-effective {
+  color: #888;
+}
+
+@keyframes effectivenessShow {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  40% { transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -60%) scale(1); }
+}
+
+/* ---------- MESSAGE BOX ---------- */
+.message-box {
+  background: var(--bg-panel);
+  border: 3px solid var(--border-pixel);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 0.5rem 0;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+}
+
+.battle-message-text {
+  font-size: 0.55rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  letter-spacing: 0.5px;
+}
+
+/* Typewriter effect */
+.typewriter {
+  overflow: hidden;
+  border-right: 2px solid var(--text-primary);
+  animation: blink-caret 0.75s step-end infinite;
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: var(--text-primary); }
+}
+
+/* ---------- ACTION PANEL ---------- */
+.action-panel {
+  min-height: 100px;
+}
+
+.move-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.move-btn {
+  font-family: var(--font-pixel);
+  font-size: 0.5rem;
+  padding: 12px 8px;
+  border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.15s ease;
+  position: relative;
+  overflow: hidden;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.move-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.move-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  filter: brightness(1.15);
+}
+
+.move-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.move-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.move-btn .move-pp {
+  display: block;
+  font-size: 0.35rem;
+  margin-top: 4px;
+  opacity: 0.7;
+}
+
+/* Move type backgrounds */
+.move-fire { background: linear-gradient(135deg, #c0501a, var(--type-fire)); }
+.move-water { background: linear-gradient(135deg, #4a6ac0, var(--type-water)); }
+.move-grass { background: linear-gradient(135deg, #5a9a38, var(--type-grass)); }
+.move-electric { background: linear-gradient(135deg, #c0a020, var(--type-electric)); }
+.move-ghost { background: linear-gradient(135deg, #504070, var(--type-ghost)); }
+.move-normal { background: linear-gradient(135deg, #8a8a60, var(--type-normal)); }
+.move-poison { background: linear-gradient(135deg, #802080, var(--type-poison)); }
+.move-ice { background: linear-gradient(135deg, #70b0b0, var(--type-ice)); }
+.move-fighting { background: linear-gradient(135deg, #901818, var(--type-fighting)); }
+.move-psychic { background: linear-gradient(135deg, #c04068, var(--type-psychic)); }
+
+/* ---------- RESULT SCREEN ---------- */
+#result-screen {
+  background: rgba(15, 15, 35, 0.95);
+  flex-direction: column;
+}
+
+.result-container {
+  text-align: center;
+  padding: 2rem;
+  animation: resultAppear 0.8s ease;
+}
+
+@keyframes resultAppear {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.result-sprite-container {
+  margin-bottom: 1.5rem;
+}
+
+.result-sprite {
+  width: 160px;
+  height: 160px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 4px 20px rgba(233, 69, 96, 0.4));
+  animation: resultBounce 2s ease-in-out infinite;
+}
+
+@keyframes resultBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.result-title {
+  font-size: 1.2rem;
+  margin-bottom: 0.8rem;
+  letter-spacing: 3px;
+}
+
+.result-title.win {
+  color: #ffd700;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.result-title.lose {
+  color: var(--accent);
+  text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+}
+
+.result-message {
+  font-size: 0.5rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  line-height: 1.8;
+}
+
+.btn-play-again {
+  font-size: 0.6rem;
+  padding: 14px 40px;
+}
+
+/* ---------- UTILITY ---------- */
+.hidden {
+  display: none !important;
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 600px) {
+  .title {
+    font-size: 1rem;
+  }
+
+  .pokemon-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+  }
+
+  .card-sprite {
+    width: 72px;
+    height: 72px;
+  }
+
+  .pokemon-info-bar {
+    min-width: 160px;
+    padding: 6px 8px;
+  }
+
+  .pokemon-label {
+    font-size: 0.45rem;
+  }
+
+  .pokemon-sprite {
+    width: 100px;
+    height: 100px;
+  }
+
+  .battle-message-text {
+    font-size: 0.45rem;
+  }
+
+  .move-btn {
+    font-size: 0.4rem;
+    padding: 10px 6px;
+  }
+
+  .selected-preview {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .result-title {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .pokemon-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pokemon-info-bar {
+    min-width: 130px;
+  }
+
+  .opponent-slot {
+    left: 30%;
+  }
+
+  .player-slot {
+    right: 30%;
+  }
+}

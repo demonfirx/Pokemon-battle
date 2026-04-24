@@ -1,0 +1,9 @@
+{
+  "name": "pokemon-battle-tests",
+  "version": "1.0.0",
+  "description": "QA test suite for Pokemon Battle API",
+  "scripts": {
+    "test": "node --test battle.test.js",
+    "test:verbose": "node --test --test-reporter=spec battle.test.js"
+  }
+}
