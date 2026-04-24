@@ -752,24 +752,34 @@ const Battle = (() => {
     if (result.playerStab !== undefined) playerAttackInfo.stab = result.playerStab;
     if (result.cpuStab !== undefined) cpuAttackInfo.stab = result.cpuStab;
 
-    // Get new HP values from backend (authoritative)
-    const newPlayerHp = result.player?.currentHp ?? playerCurrentHp;
-    const newOpponentHp = result.cpu?.currentHp ?? opponentCurrentHp;
+    // Get FINAL HP values from backend (after BOTH attacks in this turn)
+    const finalPlayerHp = result.player?.currentHp ?? playerCurrentHp;
+    const finalOpponentHp = result.cpu?.currentHp ?? opponentCurrentHp;
 
     // Get status from backend
     const newPlayerStatus = result.player?.status || null;
     const newOpponentStatus = result.cpu?.status || null;
 
-    // Calculate actual damage
-    const actualPlayerDmgTaken = playerCurrentHp - newPlayerHp;
-    const actualOpponentDmgTaken = opponentCurrentHp - newOpponentHp;
+    // Fix damage parsing: use parsed damage from turnLog, fallback to total HP diff
+    if (playerAttackInfo.damage === 0) {
+      playerAttackInfo.damage = Math.max(0, opponentCurrentHp - finalOpponentHp);
+    }
+    if (cpuAttackInfo.damage === 0) {
+      cpuAttackInfo.damage = Math.max(0, playerCurrentHp - finalPlayerHp);
+    }
 
-    if (playerAttackInfo.damage === 0 && actualOpponentDmgTaken > 0) {
-      playerAttackInfo.damage = actualOpponentDmgTaken;
+    // Calculate INTERMEDIATE HP (after first attack only, before second)
+    let hpAfterFirst_player = playerCurrentHp;
+    let hpAfterFirst_opponent = opponentCurrentHp;
+    if (playerFirst) {
+      hpAfterFirst_opponent = Math.max(0, opponentCurrentHp - playerAttackInfo.damage);
+    } else {
+      hpAfterFirst_player = Math.max(0, playerCurrentHp - cpuAttackInfo.damage);
     }
-    if (cpuAttackInfo.damage === 0 && actualPlayerDmgTaken > 0) {
-      cpuAttackInfo.damage = actualPlayerDmgTaken;
-    }
+
+    // Alias for backward compat in rest of function
+    const newPlayerHp = finalPlayerHp;
+    const newOpponentHp = finalOpponentHp;
 
     // Get move info
     const cpuMoveData = result.cpuMove || {};
@@ -800,13 +810,13 @@ const Battle = (() => {
     // Show effectiveness popup for first attack
     await showAttackEffects(firstInfo);
 
-    // Update HP for first attack's target
+    // Update HP for first attack's target (use INTERMEDIATE hp, not final)
     if (playerFirst) {
-      await animateHpChange('opponent', opponentCurrentHp, Math.max(0, newOpponentHp), opponentMaxHp);
-      opponentCurrentHp = Math.max(0, newOpponentHp);
+      await animateHpChange('opponent', opponentCurrentHp, hpAfterFirst_opponent, opponentMaxHp);
+      opponentCurrentHp = hpAfterFirst_opponent;
     } else {
-      await animateHpChange('player', playerCurrentHp, Math.max(0, newPlayerHp), playerMaxHp);
-      playerCurrentHp = Math.max(0, newPlayerHp);
+      await animateHpChange('player', playerCurrentHp, hpAfterFirst_player, playerMaxHp);
+      playerCurrentHp = hpAfterFirst_player;
     }
 
     // Handle status applied by first attack
