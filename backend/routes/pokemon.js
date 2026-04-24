@@ -3,8 +3,9 @@ const router = express.Router();
 const pokemon = require('../data/pokemon.json');
 const moves = require('../data/moves.json');
 
-// GET /api/pokemon — list all pokemon
+// GET /api/pokemon — list all pokemon (static data, cacheable)
 router.get('/', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
   res.json(pokemon);
 });
 
@@ -26,6 +27,7 @@ router.get('/:id', (req, res) => {
     })
   };
 
+  res.set('Cache-Control', 'public, max-age=3600');
   res.json(enriched);
 });
 

@@ -8,6 +8,25 @@ const abilities = require('../data/abilities.json');
 // In-memory battle store
 const battles = {};
 
+// === SECTION: Battle Memory Management ===
+const MAX_CONCURRENT_BATTLES = 100;
+
+// Clean up battles older than 1 hour (runs every 10 minutes)
+setInterval(() => {
+  const now = Date.now();
+  const ONE_HOUR = 60 * 60 * 1000;
+  let cleaned = 0;
+  for (const id of Object.keys(battles)) {
+    if (battles[id].createdAt && (now - battles[id].createdAt) > ONE_HOUR) {
+      delete battles[id];
+      cleaned++;
+    }
+  }
+  if (cleaned > 0) {
+    console.log(`[battle-cleanup] Removed ${cleaned} stale battles`);
+  }
+}, 10 * 60 * 1000); // Every 10 minutes
+
 // Helper: generate battle ID
 function generateId() {
   return Math.random().toString(36).substring(2, 10);
@@ -515,6 +534,21 @@ router.post('/start', (req, res) => {
   const available = pokemon.filter(p => p.id !== playerPoke.id);
   const cpuPoke = available[Math.floor(Math.random() * available.length)];
 
+  // Enforce max concurrent battles
+  const activeBattleCount = Object.keys(battles).length;
+  if (activeBattleCount >= MAX_CONCURRENT_BATTLES) {
+    // Try to clean up finished battles first
+    for (const id of Object.keys(battles)) {
+      if (battles[id].status === 'finished') {
+        delete battles[id];
+      }
+    }
+    // If still at limit, reject
+    if (Object.keys(battles).length >= MAX_CONCURRENT_BATTLES) {
+      return res.status(503).json({ error: 'Too many concurrent battles. Please try again later.' });
+    }
+  }
+
   const battleId = generateId();
   const battle = {
     id: battleId,
@@ -525,10 +559,12 @@ router.post('/start', (req, res) => {
     log: [
       `Battle started! ${playerPoke.name} vs ${cpuPoke.name}!`
     ],
-    winner: null
+    winner: null,
+    createdAt: Date.now()
   };
 
   battles[battleId] = battle;
+  res.set('Cache-Control', 'no-store');
   res.json(battle);
 });
 
@@ -627,6 +663,7 @@ router.post('/move', (req, res) => {
   battle.log.push(...turnLog);
   battle.turn++;
 
+  res.set('Cache-Control', 'no-store');
   res.json({
     ...battle,
     turnLog,
@@ -642,6 +679,7 @@ router.get('/:id', (req, res) => {
   if (!battle) {
     return res.status(404).json({ error: 'Battle not found' });
   }
+  res.set('Cache-Control', 'no-store');
   res.json(battle);
 });
 

@@ -1,0 +1,17 @@
+{
+  "name": "Pokémon Battle",
+  "short_name": "PokéBattle",
+  "description": "A retro-style Pokémon battle game",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f0f23",
+  "theme_color": "#1a1a2e",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23e94560' stroke='%23333' stroke-width='4'/><rect x='2' y='46' width='96' height='8' fill='%23333'/><circle cx='50' cy='50' r='14' fill='%23eee' stroke='%23333' stroke-width='4'/><circle cx='50' cy='50' r='6' fill='%23333'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

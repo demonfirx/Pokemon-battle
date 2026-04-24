@@ -1,16 +1,28 @@
 /**
  * audio.js — Sound effects using Web Audio API
  * Lightweight synthesized sounds, no external audio files needed
+ * Performance: Lazy AudioContext init (only on first user interaction)
  */
 
+/* === SECTION: Audio Module === */
 const AudioManager = (() => {
   let ctx = null;
   let muted = false;
   let initialized = false;
 
+  /**
+   * Lazy init AudioContext — only created on first actual sound request
+   * This is required by browsers (Chrome, Safari) which block AudioContext
+   * creation before user gesture.
+   */
   function getCtx() {
     if (!ctx) {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      try {
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) {
+        if (DEBUG) console.warn('AudioContext creation failed:', e);
+        return null;
+      }
     }
     if (ctx.state === 'suspended') {
       ctx.resume();
@@ -25,11 +37,11 @@ const AudioManager = (() => {
     const btn = document.createElement('button');
     btn.id = 'mute-btn';
     btn.className = 'mute-btn';
-    btn.innerHTML = '🔊';
+    btn.textContent = '🔊';
     btn.title = 'Toggle Sound';
     btn.addEventListener('click', () => {
       muted = !muted;
-      btn.innerHTML = muted ? '🔇' : '🔊';
+      btn.textContent = muted ? '🔇' : '🔊';
       btn.classList.toggle('muted', muted);
     });
     document.body.appendChild(btn);
@@ -40,6 +52,7 @@ const AudioManager = (() => {
   function playTone(freq, duration, type = 'square', gainVal = 0.15, detune = 0) {
     if (muted) return;
     const ac = getCtx();
+    if (!ac) return;
     const osc = ac.createOscillator();
     const gain = ac.createGain();
     osc.type = type;
@@ -56,6 +69,7 @@ const AudioManager = (() => {
   function playNoise(duration, gainVal = 0.12, filterFreq = 3000) {
     if (muted) return;
     const ac = getCtx();
+    if (!ac) return;
     const bufferSize = ac.sampleRate * duration;
     const buffer = ac.createBuffer(1, bufferSize, ac.sampleRate);
     const data = buffer.getChannelData(0);

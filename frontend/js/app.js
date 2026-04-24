@@ -1,8 +1,10 @@
 /**
  * app.js — Main app logic: screen navigation, Pokemon selection, game flow
  *          Enhanced with: dual types, stat bars, animated sprites, ability tooltips
+ *          Performance: sprite preloading, DOM caching, debounced clicks, passive listeners
  */
 
+/* === SECTION: App Module === */
 const App = (() => {
   // Sprite URLs
   const SPRITE_URL = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/';
@@ -138,10 +140,13 @@ const App = (() => {
 
   /**
    * Render Pokemon selection cards with dual types, stat bars, abilities
+   * Uses DocumentFragment for batch DOM insertion
    */
   function renderPokemonGrid(pokemonList) {
     const grid = document.getElementById('pokemon-roster');
     grid.innerHTML = '';
+
+    const fragment = createFragment();
 
     pokemonList.forEach(pokemon => {
       const card = document.createElement('div');
@@ -191,7 +196,7 @@ const App = (() => {
       ` : '';
 
       card.innerHTML = `
-        <img class="card-sprite" src="${spriteUrl}" alt="${pokemon.name}" loading="lazy">
+        <img class="card-sprite" src="${spriteUrl}" alt="${pokemon.name}" width="96" height="96" loading="lazy" decoding="async">
         <span class="card-name">${pokemon.name}</span>
         <div class="card-types">${typeBadgesHtml}</div>
         ${abilityHtml}
@@ -202,7 +207,14 @@ const App = (() => {
         AudioManager.buttonClick();
         selectPokemon(pokemon, card);
       });
-      grid.appendChild(card);
+      fragment.appendChild(card);
+    });
+
+    grid.appendChild(fragment);
+
+    // Preload all sprites in background after rendering the grid
+    SpritePreloader.preloadAll(pokemonList, SPRITE_IDS, (loaded, total) => {
+      debugLog(`Sprite preload: ${loaded}/${total}`);
     });
   }
 
@@ -315,10 +327,14 @@ const App = (() => {
     showScreen('select-screen');
   }
 
+  // Debounced battle start to prevent double-clicks
+  const debouncedStartBattle = debounce(startBattle, 300);
+
   /**
    * Initialize the app
    */
   async function init() {
+    PerfMark.start('app-init');
     showScreen('loading-screen');
 
     try {
@@ -346,16 +362,17 @@ const App = (() => {
 
       document.getElementById('btn-battle').addEventListener('click', () => {
         AudioManager.buttonClick();
-        startBattle();
+        debouncedStartBattle();
       });
       document.getElementById('btn-play-again').addEventListener('click', () => {
         AudioManager.buttonClick();
         playAgain();
       });
 
+      PerfMark.end('app-init');
       setTimeout(() => showScreen('select-screen'), 800);
     } catch (err) {
-      console.error('Failed to initialize:', err);
+      if (DEBUG) console.error('Failed to initialize:', err);
       document.querySelector('.loading-text').textContent = `Error: ${err.message}`;
       document.querySelector('.loading-text').style.color = '#f44336';
     }
@@ -370,4 +387,66 @@ const App = (() => {
   };
 })();
 
-document.addEventListener('DOMContentLoaded', App.init);
+/* === SECTION: DOMContentLoaded Init === */
+document.addEventListener('DOMContentLoaded', () => {
+  App.init();
+
+  // --- Mobile Touch Enhancements ---
+
+  // 1. Ability tooltip: tap to toggle on mobile (no hover)
+  document.addEventListener('click', (e) => {
+    const ability = e.target.closest('.card-ability');
+    if (ability) {
+      // Close all other tooltips first
+      document.querySelectorAll('.card-ability.tooltip-active').forEach(el => {
+        if (el !== ability) el.classList.remove('tooltip-active');
+      });
+      ability.classList.toggle('tooltip-active');
+      e.stopPropagation();
+      return;
+    }
+    // Tap elsewhere closes tooltips
+    document.querySelectorAll('.card-ability.tooltip-active').forEach(el => {
+      el.classList.remove('tooltip-active');
+    });
+  });
+
+  // 2. Battle log swipe gesture (swipe up to expand, down to collapse)
+  const battleLog = document.getElementById('battle-log');
+  if (battleLog) {
+    let touchStartY = 0;
+    let touchStartTime = 0;
+
+    battleLog.addEventListener('touchstart', (e) => {
+      touchStartY = e.touches[0].clientY;
+      touchStartTime = Date.now();
+    }, { passive: true });
+
+    battleLog.addEventListener('touchend', (e) => {
+      const touchEndY = e.changedTouches[0].clientY;
+      const deltaY = touchStartY - touchEndY;
+      const elapsed = Date.now() - touchStartTime;
+
+      // Quick swipe (< 300ms) with enough distance (> 30px)
+      if (elapsed < 300 && Math.abs(deltaY) > 30) {
+        if (deltaY > 0) {
+          battleLog.classList.remove('collapsed');
+        } else {
+          battleLog.classList.add('collapsed');
+        }
+      }
+    }, { passive: true });
+  }
+
+  // 3. Prevent accidental zoom during battle
+  document.addEventListener('gesturestart', (e) => {
+    e.preventDefault();
+  });
+
+  // 4. Add passive listeners for scroll/touch events on battle log content
+  const logContent = document.getElementById('battle-log-content');
+  if (logContent) {
+    logContent.addEventListener('scroll', () => {}, { passive: true });
+    logContent.addEventListener('touchmove', () => {}, { passive: true });
+  }
+});

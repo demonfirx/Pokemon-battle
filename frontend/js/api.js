@@ -1,8 +1,10 @@
 /**
- * api.js — API calls to backend at http://localhost:3001
+ * api.js — API calls to backend
  * Handles all communication with the Pokemon Battle API server.
+ * Performance: request caching for static data
  */
 
+/* === SECTION: API Module === */
 const API = (() => {
   // Auto-detect: use relative URL on Vercel, localhost for dev
   const BASE_URL = window.location.hostname === 'localhost' && window.location.port !== '3000'
@@ -34,13 +36,19 @@ const API = (() => {
     }
   }
 
+  // Cache for static pokemon data (doesn't change during session)
+  let pokemonCache = null;
+
   return {
     /**
-     * GET /api/pokemon — List all available Pokemon
+     * GET /api/pokemon — List all available Pokemon (cached after first call)
      * @returns {Promise<Array>} Array of pokemon objects
      */
     async getAllPokemon() {
-      return request('/pokemon');
+      if (pokemonCache) return pokemonCache;
+      const data = await request('/pokemon');
+      pokemonCache = data;
+      return data;
     },
 
     /**

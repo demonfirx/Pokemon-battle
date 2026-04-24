@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const pokemonRoutes = require('./routes/pokemon');
 const battleRoutes = require('./routes/battle');
 
@@ -8,6 +9,7 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
+app.use(compression()); // Gzip compression for all responses
 app.use(express.json());
 
 // Routes

@@ -3,8 +3,12 @@
  *             damage numbers, effectiveness text, win/lose flow,
  *             status conditions, critical hits, STAB, battle log,
  *             turn order, type effectiveness popups, sound effects
+ *
+ * Performance: debounced move clicks, cached DOM refs, DocumentFragment for log,
+ *              requestAnimationFrame for HP animations, object pool for damage numbers
  */
 
+/* === SECTION: Battle Module === */
 const Battle = (() => {
   // State
   let battleId = null;
@@ -19,6 +23,7 @@ const Battle = (() => {
   let spriteIds = {};
   let typewriterTimeout = null;
   let turnNumber = 0;
+  let moveClickPending = false; // Debounce guard for move clicks
 
   // Status tracking
   let playerStatus = null;  // 'brn', 'par', 'psn', 'slp', 'frz', 'cnf' or null
@@ -58,8 +63,8 @@ const Battle = (() => {
     status: '📊',
   };
 
-  // DOM refs
-  const $ = (id) => document.getElementById(id);
+  // DOM refs — use DOMCache for frequently accessed elements
+  const $ = (id) => DOMCache.get(id) || document.getElementById(id);
 
   /**
    * Initialize battle screen with data from API
@@ -133,6 +138,12 @@ const Battle = (() => {
 
     // Setup log toggle
     setupLogToggle();
+
+    // Collapse battle log by default on mobile
+    if (window.innerWidth <= 480) {
+      const log = $('battle-log');
+      if (log) log.classList.add('collapsed');
+    }
 
     // Init audio on first interaction
     AudioManager.ensureInit();
@@ -281,6 +292,7 @@ const Battle = (() => {
 
   /**
    * Render move buttons with category icons
+   * Uses DocumentFragment for batch DOM insertion
    */
   function renderMoves(moves) {
     const grid = $('move-buttons');
@@ -301,6 +313,8 @@ const Battle = (() => {
 
     playerPokemon._battleMoves = moves;
 
+    const fragment = createFragment();
+
     moves.forEach(move => {
       const btn = document.createElement('button');
       const moveType = (move.type || 'normal').toLowerCase();
@@ -313,30 +327,45 @@ const Battle = (() => {
 
       const noPp = move.currentPp <= 0;
 
-      let innerHtml = `<span class="move-category-icon">${catIcon}</span> ${move.name}`;
-      if (category === 'status') {
-        innerHtml += `<span class="move-status-label">STATUS</span>`;
-      }
-      innerHtml += `<span class="move-pp">PP ${move.currentPp}/${move.maxPp}</span>`;
+      // Use textContent + createElement where possible to minimize innerHTML
+      const iconSpan = document.createElement('span');
+      iconSpan.className = 'move-category-icon';
+      iconSpan.textContent = catIcon;
+      btn.appendChild(iconSpan);
+      btn.appendChild(document.createTextNode(` ${move.name}`));
 
-      btn.innerHTML = innerHtml;
+      if (category === 'status') {
+        const statusLabel = document.createElement('span');
+        statusLabel.className = 'move-status-label';
+        statusLabel.textContent = 'STATUS';
+        btn.appendChild(statusLabel);
+      }
+
+      const ppSpan = document.createElement('span');
+      ppSpan.className = 'move-pp';
+      ppSpan.textContent = `PP ${move.currentPp}/${move.maxPp}`;
+      btn.appendChild(ppSpan);
+
       if (noPp) btn.disabled = true;
 
       btn.addEventListener('click', () => {
         AudioManager.buttonClick();
         handleMoveClick(move);
       });
-      grid.appendChild(btn);
+      fragment.appendChild(btn);
     });
+
+    grid.appendChild(fragment);
   }
 
   /**
-   * Handle move button click
+   * Handle move button click — debounced to prevent double-fire
    */
   async function handleMoveClick(move) {
-    if (isAnimating) return;
+    if (isAnimating || moveClickPending) return;
     if (move.currentPp !== undefined && move.currentPp <= 0) return;
     isAnimating = true;
+    moveClickPending = true;
     disableMoves(true);
 
     try {
@@ -355,10 +384,12 @@ const Battle = (() => {
       }
       updatePpBar();
     } catch (err) {
-      console.error('Move failed:', err);
+      if (DEBUG) console.error('Move failed:', err);
       setMessage(`Error: ${err.message}`);
       isAnimating = false;
       disableMoves(false);
+    } finally {
+      moveClickPending = false;
     }
   }
 
@@ -595,8 +626,10 @@ const Battle = (() => {
     entry.textContent = text;
     content.appendChild(entry);
 
-    // Auto-scroll
-    content.scrollTop = content.scrollHeight;
+    // Auto-scroll using requestAnimationFrame to batch with rendering
+    requestAnimationFrame(() => {
+      content.scrollTop = content.scrollHeight;
+    });
   }
 
   function setupLogToggle() {
@@ -883,6 +916,7 @@ const Battle = (() => {
     await delay(300);
     setMessage('What will you do?');
     isAnimating = false;
+    moveClickPending = false;
     disableMoves(false);
   }
 
